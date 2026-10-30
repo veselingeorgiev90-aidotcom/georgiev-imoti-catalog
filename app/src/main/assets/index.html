@@ -108,6 +108,21 @@ textarea{min-height:84px;resize:vertical}
   padding:10px 16px;border-radius:99px;font-weight:600;font-size:14px;z-index:30;max-width:calc(100% - 32px);text-align:center}
 .note{font-size:12.5px;color:var(--muted);margin-top:22px;display:flex;gap:8px;align-items:flex-start}
 .tpl label{color:var(--ink)}
+.auth{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;display:flex;justify-content:center;
+  padding:calc(40px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 30px max(20px,env(safe-area-inset-left,0px))}
+.auth-box{width:100%;max-width:400px;display:grid;gap:14px;align-content:start}
+.auth-logo{width:64px;height:64px;border-radius:18px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);font-size:30px}
+.auth h2{font-family:var(--f-display);font-size:22px;margin:4px 0 0;font-weight:800}
+.auth p{margin:0;color:var(--muted)}
+.auth .btn{padding:13px;font-size:16px}
+.err{color:var(--danger);font-weight:600;font-size:14px;min-height:1em}
+.warn{background:var(--gold-soft);color:var(--ink);border-radius:12px;padding:11px 12px;font-size:13.5px}
+.linkbtn{background:none;border:0;color:var(--accent);font-weight:600;padding:6px 0;cursor:pointer;justify-self:start}
+.devlist{display:grid;gap:8px}
+.devlist button{text-align:left;justify-content:flex-start}
+.btstatus{display:flex;gap:10px;align-items:center;font-weight:600}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:sp 1s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
 .banner{background:var(--danger-soft);color:var(--ink);border:1px solid var(--danger);border-radius:12px;padding:12px;margin-top:12px}
 @media (prefers-reduced-motion:no-preference){.overlay .sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}}
 [hidden]{display:none!important}
@@ -161,6 +176,16 @@ textarea{min-height:84px;resize:vertical}
       <label class="check" for="s_before"><input id="s_before" type="checkbox"> Напомни ми и предния ден</label>
       <div class="row"><button class="btn primary" id="saveRem" type="button">Запази</button><button class="btn" id="testNotif" type="button">Покажи пробно известие сега</button></div>
     </div>
+    <div class="section-h"><h2>Акаунт</h2></div>
+    <div class="card" style="display:grid;gap:12px">
+      <div>Влязъл си като <b id="acctName"></b></div>
+      <div class="row"><button class="btn" id="btnChpw" type="button">Смени паролата</button><button class="btn" id="btnLogout" type="button">Изход</button></div>
+    </div>
+    <div class="section-h"><h2>Прехвърляне на друг телефон</h2></div>
+    <div class="card" style="display:grid;gap:12px">
+      <p class="hint" style="margin:0">Прехвърля всички клиенти и текстове през Bluetooth към друг телефон, на който е влязъл <b>същият акаунт със същата парола</b>. Първо сдвои двата телефона от Настройки → Bluetooth.</p>
+      <div class="row"><button class="btn primary" id="btSend" type="button">Изпрати към друг телефон</button><button class="btn" id="btRecv" type="button">Получи от друг телефон</button></div>
+    </div>
     <div class="section-h"><h2>Текстове на поздравите</h2></div>
     <div class="card tpl">
       <p class="hint" style="margin-top:0">Можеш да ползваш: <b>{име}</b> — обръщение към клиента, <b>{години}</b> — напр. „3 години“, <b>{имот}</b> — кой имот е купен, <b>{повод}</b> — името на семейния празник, <b>{здрав}</b> — „здрав“ или „здрава“ според пола, <b>{подпис}</b>.</p>
@@ -181,6 +206,7 @@ textarea{min-height:84px;resize:vertical}
 </div>
 
 <div id="overlay" class="overlay" hidden></div>
+<div id="auth" class="auth" hidden><div class="auth-box" id="authBox"></div></div>
 <div id="toast" class="toast" hidden></div>
 
 <script>
@@ -541,7 +567,7 @@ $("#q").oninput=renderContacts;
 function fillTplForm(){ for(const k in DEFAULT_TPL) $("#t_"+k).value=TPL[k]; }
 $("#tplForm").onsubmit=async e=>{ e.preventDefault(); const n={}; for(const k in DEFAULT_TPL) n[k]=$("#t_"+k).value;
   TPL=n; STATE.tpl=n; if(persist()) toast("Текстовете са запазени."); };
-function fillSettings(){ const st=STATE.settings; $("#s_time").value=pad(st.h)+":"+pad(st.m); $("#s_before").checked=!!st.before; }
+function fillSettings(){ try{ $("#acctName").textContent=A?ACC().user:""; }catch(_){} const st=STATE.settings; $("#s_time").value=pad(st.h)+":"+pad(st.m); $("#s_before").checked=!!st.before; }
 $("#saveRem").onclick=()=>{ const [h,m]=($("#s_time").value||"09:00").split(":").map(Number);
   STATE.settings={...STATE.settings,h,m,before:$("#s_before").checked}; if(A) A.setReminderTime(h,m);
   if(persist()) toast(`Ще получаваш известия в ${pad(h)}:${pad(m)}.`); };
@@ -556,14 +582,121 @@ function setTab(t){ tab=t; document.querySelectorAll(".tabs button").forEach(b=>
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 $("#range").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; range=+b.dataset.d; document.querySelectorAll("#range button").forEach(x=>x.setAttribute("aria-pressed",x===b)); renderUp(); };
 function render(){ if(tab==="up") renderUp(); else if(tab==="c") renderContacts(); else { fillTplForm(); fillSettings(); } }
-window.onAndroidBack=()=>{ if(!$("#overlay").hidden){ closeSheet(); return true; } if(tab!=="up"){ setTab("up"); return true; } return false; };
+window.onAndroidBack=()=>{ if(!$("#auth").hidden) return false; if(!$("#overlay").hidden){ if(btBusy) A.btCancel(); closeSheet(); return true; } if(tab!=="up"){ setTab("up"); return true; } return false; };
 
 /* ---------- Boot ---------- */
 const t0=today(); $("#todayLbl").textContent=`${DOW[t0.getDay()]}, ${t0.getDate()} ${MONTHS_FULL[t0.getMonth()]}`;
 try{ const s=localStorage.getItem("tab"); if(s&&["up","c","t"].includes(s)) tab=s; }catch(_){}
-loadState(); contacts=STATE.contacts; if(STATE.tpl) TPL={...DEFAULT_TPL,...STATE.tpl}; ready=true;
-if(A){ A.setReminderTime(STATE.settings.h,STATE.settings.m); pushSchedule(); }
-setTab(tab);
+/* ---------- Account ---------- */
+const ACC=()=>{ try{ return JSON.parse(A.accountInfo()); }catch(_){ return {exists:false}; } };
+function unlockedStart(){ $("#auth").hidden=true; $("#authBox").innerHTML="";
+  STATE={contacts:[],tpl:null,settings:{h:9,m:0,before:true}}; TPL={...DEFAULT_TPL};
+  loadState(); contacts=STATE.contacts; if(STATE.tpl) TPL={...DEFAULT_TPL,...STATE.tpl}; ready=true;
+  if(A){ A.setReminderTime(STATE.settings.h,STATE.settings.m); pushSchedule(); }
+  setTab(tab); }
+function lockScreen(){ closeSheet(); STATE={contacts:[],tpl:null,settings:STATE.settings}; contacts=[]; ready=false;
+  showAuth(); }
+window.onLocked=lockScreen;
+const busy=(btn,on,txt)=>{ btn.disabled=on; btn.textContent=txt; };
+function showAuth(){ const info=ACC(); const box=$("#authBox"); $("#auth").hidden=false;
+  if(!info.exists){
+    box.innerHTML=`<div class="auth-logo" aria-hidden="true">♥</div><h2>Създай акаунт</h2>
+     <p>Данните ти ще се шифроват с паролата. Без нея никой не може да ги прочете.</p>
+     <form id="aForm" style="display:grid;gap:12px" autocomplete="off">
+      <label for="a_user">Потребителско име<input id="a_user" required autocapitalize="none" autocomplete="username"></label>
+      <label for="a_pass">Парола (поне 6 знака)<input id="a_pass" type="password" required minlength="6" autocomplete="new-password"></label>
+      <label for="a_pass2">Повтори паролата<input id="a_pass2" type="password" required autocomplete="new-password"></label>
+      <div class="warn">Ако забравиш паролата, данните не могат да се възстановят. Пази си резервно копие с „Експорт CSV“.</div>
+      <div class="err" id="aErr"></div>
+      <button class="btn primary" type="submit" id="aGo">Създай акаунт</button>
+      <p class="hint">За да прехвърляш данни на друг телефон, създай там акаунт със същото име и парола.</p>
+     </form>`;
+    $("#aForm").onsubmit=e=>{ e.preventDefault(); const u=$("#a_user").value.trim(), p=$("#a_pass").value;
+      if(u.length<2){ $("#aErr").textContent="Въведи потребителско име."; return; }
+      if(p.length<6){ $("#aErr").textContent="Паролата трябва да е поне 6 знака."; return; }
+      if(p!==$("#a_pass2").value){ $("#aErr").textContent="Паролите не съвпадат."; return; }
+      busy($("#aGo"),true,"Създаване…");
+      setTimeout(()=>{ const r=A.createAccount(u,p); if(r==="ok") unlockedStart(); else { busy($("#aGo"),false,"Създай акаунт"); $("#aErr").textContent="Не успях да създам акаунта. Опитай пак."; } },60); };
+    setTimeout(()=>$("#a_user").focus(),100);
+  } else {
+    box.innerHTML=`<div class="auth-logo" aria-hidden="true">♥</div><h2>Вход</h2><p>Поздрави за клиенти</p>
+     <form id="lForm" style="display:grid;gap:12px" autocomplete="off">
+      <label for="l_user">Потребителско име<input id="l_user" required autocapitalize="none" autocomplete="username" value="${esc(info.user)}"></label>
+      <label for="l_pass">Парола<input id="l_pass" type="password" required autocomplete="current-password"></label>
+      <div class="err" id="lErr"></div>
+      <button class="btn primary" type="submit" id="lGo">Влез</button>
+      <button class="linkbtn" type="button" id="forgot">Забравена парола?</button>
+      <div id="forgotBox"></div>
+     </form>`;
+    $("#lForm").onsubmit=e=>{ e.preventDefault(); busy($("#lGo"),true,"Проверка…"); $("#lErr").textContent="";
+      setTimeout(()=>{ const r=A.login($("#l_user").value,$("#l_pass").value);
+        if(r==="ok") unlockedStart(); else { busy($("#lGo"),false,"Влез"); $("#l_pass").value=""; $("#lErr").textContent="Грешно потребителско име или парола."; } },60); };
+    $("#forgot").onclick=()=>{ $("#forgotBox").innerHTML=`<div class="confirm">Паролата не може да се възстанови, защото с нея са шифровани данните. Можеш да изтриеш всичко на този телефон и да започнеш с нов акаунт. Ако имаш CSV копие или друг телефон със същия акаунт, данните могат да се върнат оттам.
+      <div class="row" style="margin-top:10px"><button type="button" class="btn danger small" id="wipe">Изтрий всичко и започни отначало</button><button type="button" class="btn small" id="noWipe">Отказ</button></div></div>`;
+      $("#noWipe").onclick=()=>$("#forgotBox").innerHTML=""; $("#wipe").onclick=()=>{ A.resetAll(); showAuth(); }; };
+    setTimeout(()=>$("#l_pass").focus(),100);
+  } }
+$("#btnLogout").onclick=()=>{ A.logout(); lockScreen(); };
+$("#btnChpw").onclick=()=>{ openSheet(`<h3>Смяна на паролата</h3><form id="pwForm" style="display:grid;gap:12px">
+   <label for="pw_old">Сегашна парола<input id="pw_old" type="password" required></label>
+   <label for="pw_new">Нова парола (поне 6 знака)<input id="pw_new" type="password" required minlength="6"></label>
+   <label for="pw_new2">Повтори новата парола<input id="pw_new2" type="password" required></label>
+   <p class="hint">Смени паролата и на другите телефони със същия акаунт, иначе прехвърлянето няма да работи.</p>
+   <div class="err" id="pwErr"></div>
+   <div class="actions"><span></span><div class="row"><button type="button" class="btn" data-close>Отказ</button><button class="btn primary" type="submit" id="pwGo">Смени</button></div></div></form>`);
+  $("#pwForm").onsubmit=e=>{ e.preventDefault(); const n=$("#pw_new").value;
+    if(n.length<6){ $("#pwErr").textContent="Новата парола трябва да е поне 6 знака."; return; }
+    if(n!==$("#pw_new2").value){ $("#pwErr").textContent="Новите пароли не съвпадат."; return; }
+    busy($("#pwGo"),true,"Смяна…");
+    setTimeout(()=>{ const r=A.changePassword($("#pw_old").value,n);
+      if(r==="ok"){ closeSheet(); toast("Паролата е сменена."); } else { busy($("#pwGo"),false,"Смени"); $("#pwErr").textContent=r==="bad"?"Сегашната парола е грешна.":"Не успях да сменя паролата."; } },60); }; };
+
+/* ---------- Bluetooth transfer ---------- */
+let btBusy=false, btMode=null, btRetry=null;
+function btReady(then){ const r=A.btEnsure();
+  if(r==="ok") return then();
+  if(r==="none") return toast("Този телефон няма Bluetooth.");
+  if(r==="off") return toast("Включи Bluetooth и натисни пак.");
+  btRetry=then; }
+function btStatusSheet(title,msg){ openSheet(`<h3>${esc(title)}</h3><div class="btstatus" id="btSt"><span class="spin" aria-hidden="true"></span><span id="btMsg">${esc(msg)}</span></div>
+  <div class="actions"><span></span><button class="btn" type="button" id="btStop">Отказ</button></div>`);
+  $("#btStop").onclick=()=>{ A.btCancel(); btBusy=false; closeSheet(); }; }
+function btDone(title,html){ btBusy=false; openSheet(`<h3>${esc(title)}</h3>${html}<div class="actions"><span></span><button class="btn primary" data-close>Готово</button></div>`); }
+$("#btSend").onclick=()=>btReady(()=>{ let list=[]; try{ list=JSON.parse(A.btDevices()); }catch(_){}
+  if(!list.length){ openSheet(`<h3>Няма сдвоени телефони</h3><p>Първо сдвои двата телефона: Настройки → Bluetooth → „Сдвояване на ново устройство“. После опитай пак.</p><div class="actions"><span></span><button class="btn primary" data-close>Добре</button></div>`); return; }
+  openSheet(`<h3>Изпрати към…</h3><p class="hint">На другия телефон първо натисни „Получи от друг телефон“.</p><div class="devlist">${list.map(d=>`<button class="btn" data-addr="${esc(d.addr)}">📱 ${esc(d.name)}</button>`).join("")}</div>
+    <div class="actions"><span></span><button class="btn" data-close>Отказ</button></div>`);
+  document.querySelectorAll("[data-addr]").forEach(b=>b.onclick=()=>{ btBusy=true; btMode="send";
+    btStatusSheet("Изпращане","Свързване…"); A.btSend(b.dataset.addr, JSON.stringify(STATE)); }); });
+$("#btRecv").onclick=()=>btReady(()=>{ btBusy=true; btMode="recv"; const nm=A.btName();
+  btStatusSheet("Получаване",`Чакам… На другия телефон натисни „Изпрати към друг телефон“ и избери „${nm||"този телефон"}“.`); A.btReceive(); });
+window.onBt=ev=>{
+  if(ev.type==="perm"){ if(ev.msg==="ok"&&btRetry){ const f=btRetry; btRetry=null; btReady(f); } else { btRetry=null; toast("Без разрешение за Bluetooth прехвърлянето не може да работи."); } return; }
+  if(ev.type==="status"){ const m=$("#btMsg"); if(m) m.textContent=ev.msg; return; }
+  if(ev.type==="cancelled"){ btBusy=false; return; }
+  if(ev.type==="error"){ btDone("Неуспешно прехвърляне",`<p>${esc(ev.msg)}</p>`); return; }
+  if(ev.type==="sent"){ btDone("Готово",`<p>Изпратени ${STATE.contacts.length} клиента. На другия телефон избери дали да ги добави или да замени всичко.</p>`); return; }
+  if(ev.type==="received"){ let got=null; try{ got=JSON.parse(A.btTakeReceived()); }catch(_){}
+    if(!got||!Array.isArray(got.contacts)){ btDone("Неуспешно прехвърляне","<p>Получените данни са повредени.</p>"); return; }
+    btBusy=false;
+    openSheet(`<h3>Получени ${got.contacts.length} клиента</h3>
+      <p>На този телефон имаш ${STATE.contacts.length}. Какво да направя?</p>
+      <div style="display:grid;gap:10px;margin-top:12px">
+       <button class="btn primary" id="mMerge">Добави и обнови</button>
+       <p class="hint" style="margin:0">Новите клиенти се добавят. При един и същ клиент остава по-новата версия. Нищо не се изтрива.</p>
+       <button class="btn" id="mReplace">Замени всичко с получените</button>
+       <p class="hint" style="margin:0">Клиентите на този телефон се заменят изцяло с тези от другия.</p>
+       <button class="btn" data-close>Отказ</button></div>`);
+    $("#mMerge").onclick=()=>{ const map=new Map(STATE.contacts.map(c=>[c.id,c])); let add=0, upd=0;
+      for(const c of got.contacts){ const cur=map.get(c.id); if(!cur){ map.set(c.id,c); add++; } else if((c.updatedAt||"")>(cur.updatedAt||"")){ map.set(c.id,c); upd++; } }
+      STATE.contacts=[...map.values()]; if(!STATE.tpl&&got.tpl){ STATE.tpl=got.tpl; TPL={...DEFAULT_TPL,...got.tpl}; }
+      if(persist()){ closeSheet(); render(); toast(`Добавени ${add}, обновени ${upd}.`); } };
+    $("#mReplace").onclick=()=>{ STATE.contacts=got.contacts; if(got.tpl){ STATE.tpl=got.tpl; TPL={...DEFAULT_TPL,...got.tpl}; }
+      if(persist()){ closeSheet(); render(); toast(`Заредени ${got.contacts.length} клиента.`); } };
+  } };
+
+if(A&&A.accountInfo){ const i=ACC(); if(i.unlocked) unlockedStart(); else showAuth(); }
+else { loadState(); contacts=STATE.contacts; if(STATE.tpl) TPL={...DEFAULT_TPL,...STATE.tpl}; ready=true; setTab(tab); }
 })();
 </script>
 </body></html>

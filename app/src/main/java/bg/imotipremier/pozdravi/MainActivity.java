@@ -17,6 +17,9 @@ public class MainActivity extends Activity {
     private static final int FILE_REQ = 1;
     private WebView web;
     private ValueCallback<Uri[]> fileCb;
+    private Bridge bridge;
+    private long pausedAt = 0;
+    private static final long LOCK_AFTER_MS = 3 * 60 * 1000;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -31,7 +34,8 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setAllowContentAccess(true);
-        web.addJavascriptInterface(new Bridge(this), "Android");
+        bridge = new Bridge(this, web);
+        web.addJavascriptInterface(bridge, "Android");
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
@@ -74,6 +78,31 @@ public class MainActivity extends Activity {
             fileCb.onReceiveValue(r);
             fileCb = null;
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int req, String[] perms, int[] res) {
+        super.onRequestPermissionsResult(req, perms, res);
+        if (req == Bridge.REQ_BT) {
+            boolean ok = res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED;
+            bridge.emit("perm", ok ? "ok" : "denied");
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        pausedAt = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (pausedAt > 0 && Bridge.unlocked() && System.currentTimeMillis() - pausedAt > LOCK_AFTER_MS) {
+            Bridge.lock();
+            web.evaluateJavascript("window.onLocked&&window.onLocked()", null);
+        }
+        pausedAt = 0;
     }
 
     @Override
