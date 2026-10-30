@@ -38,6 +38,7 @@ button,input,select,textarea{font-family:var(--f-body);font-size:15px;color:var(
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);
   border-radius:10px;padding:9px 13px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:default}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn.danger{color:var(--danger);border-color:var(--danger)}
 .btn.small{padding:6px 10px;font-size:13px;border-radius:8px}
@@ -118,6 +119,8 @@ textarea{min-height:84px;resize:vertical}
 .err{color:var(--danger);font-weight:600;font-size:14px;min-height:1em}
 .warn{background:var(--gold-soft);color:var(--ink);border-radius:12px;padding:11px 12px;font-size:13.5px}
 .linkbtn{background:none;border:0;color:var(--accent);font-weight:600;padding:6px 0;cursor:pointer;justify-self:start}
+.rcode{font:700 19px/1.3 ui-monospace,"Roboto Mono",Menlo,monospace;letter-spacing:.06em;text-align:center;background:var(--accent-soft);color:var(--accent);
+  border-radius:12px;padding:14px 10px;user-select:all;-webkit-user-select:all;overflow-wrap:anywhere}
 .devlist{display:grid;gap:8px}
 .devlist button{text-align:left;justify-content:flex-start}
 .btstatus{display:flex;gap:10px;align-items:center;font-weight:600}
@@ -180,6 +183,11 @@ textarea{min-height:84px;resize:vertical}
     <div class="card" style="display:grid;gap:12px">
       <div>Влязъл си като <b id="acctName"></b></div>
       <div class="row"><button class="btn" id="btnChpw" type="button">Смени паролата</button><button class="btn" id="btnLogout" type="button">Изход</button></div>
+    </div>
+    <div class="section-h"><h2>Код за възстановяване</h2></div>
+    <div class="card" style="display:grid;gap:12px">
+      <p class="hint" style="margin:0" id="recStatus"></p>
+      <div class="row"><button class="btn" id="btnRec" type="button">Създай нов код</button></div>
     </div>
     <div class="section-h"><h2>Прехвърляне на друг телефон</h2></div>
     <div class="card" style="display:grid;gap:12px">
@@ -567,7 +575,9 @@ $("#q").oninput=renderContacts;
 function fillTplForm(){ for(const k in DEFAULT_TPL) $("#t_"+k).value=TPL[k]; }
 $("#tplForm").onsubmit=async e=>{ e.preventDefault(); const n={}; for(const k in DEFAULT_TPL) n[k]=$("#t_"+k).value;
   TPL=n; STATE.tpl=n; if(persist()) toast("Текстовете са запазени."); };
-function fillSettings(){ try{ $("#acctName").textContent=A?ACC().user:""; }catch(_){} const st=STATE.settings; $("#s_time").value=pad(st.h)+":"+pad(st.m); $("#s_before").checked=!!st.before; }
+function fillSettings(){ try{ const i=ACC(); $("#acctName").textContent=i.user||"";
+    $("#recStatus").textContent=i.recovery?"Имаш код за възстановяване. Ако създадеш нов, старият спира да работи.":"Още нямаш код за възстановяване. Създай го и го изпрати на имейла си, за да можеш да смениш паролата, ако я забравиш.";
+    $("#btnRec").textContent=i.recovery?"Създай нов код":"Създай код"; }catch(_){} const st=STATE.settings; $("#s_time").value=pad(st.h)+":"+pad(st.m); $("#s_before").checked=!!st.before; }
 $("#saveRem").onclick=()=>{ const [h,m]=($("#s_time").value||"09:00").split(":").map(Number);
   STATE.settings={...STATE.settings,h,m,before:$("#s_before").checked}; if(A) A.setReminderTime(h,m);
   if(persist()) toast(`Ще получаваш известия в ${pad(h)}:${pad(m)}.`); };
@@ -593,7 +603,8 @@ function unlockedStart(){ $("#auth").hidden=true; $("#authBox").innerHTML="";
   STATE={contacts:[],tpl:null,settings:{h:9,m:0,before:true}}; TPL={...DEFAULT_TPL};
   loadState(); contacts=STATE.contacts; if(STATE.tpl) TPL={...DEFAULT_TPL,...STATE.tpl}; ready=true;
   if(A){ A.setReminderTime(STATE.settings.h,STATE.settings.m); pushSchedule(); }
-  setTab(tab); }
+  setTab(tab);
+  if(A&&A.newRecoveryCode&&!ACC().recovery) setTimeout(offerRecovery,400); }
 function lockScreen(){ closeSheet(); STATE={contacts:[],tpl:null,settings:STATE.settings}; contacts=[]; ready=false;
   showAuth(); }
 window.onLocked=lockScreen;
@@ -616,7 +627,7 @@ function showAuth(){ const info=ACC(); const box=$("#authBox"); $("#auth").hidde
       if(p.length<6){ $("#aErr").textContent="Паролата трябва да е поне 6 знака."; return; }
       if(p!==$("#a_pass2").value){ $("#aErr").textContent="Паролите не съвпадат."; return; }
       busy($("#aGo"),true,"Създаване…");
-      setTimeout(()=>{ const r=A.createAccount(u,p); if(r==="ok") unlockedStart(); else { busy($("#aGo"),false,"Създай акаунт"); $("#aErr").textContent="Не успях да създам акаунта. Опитай пак."; } },60); };
+      setTimeout(()=>{ const r=A.createAccount(u,p); if(r==="ok") showRecoveryAuth(); else { busy($("#aGo"),false,"Създай акаунт"); $("#aErr").textContent="Не успях да създам акаунта. Опитай пак."; } },60); };
     setTimeout(()=>$("#a_user").focus(),100);
   } else {
     box.innerHTML=`<div class="auth-logo" aria-hidden="true">♥</div><h2>Вход</h2><p>Поздрави за клиенти</p>
@@ -631,12 +642,60 @@ function showAuth(){ const info=ACC(); const box=$("#authBox"); $("#auth").hidde
     $("#lForm").onsubmit=e=>{ e.preventDefault(); busy($("#lGo"),true,"Проверка…"); $("#lErr").textContent="";
       setTimeout(()=>{ const r=A.login($("#l_user").value,$("#l_pass").value);
         if(r==="ok") unlockedStart(); else { busy($("#lGo"),false,"Влез"); $("#l_pass").value=""; $("#lErr").textContent="Грешно потребителско име или парола."; } },60); };
-    $("#forgot").onclick=()=>{ $("#forgotBox").innerHTML=`<div class="confirm">Паролата не може да се възстанови, защото с нея са шифровани данните. Можеш да изтриеш всичко на този телефон и да започнеш с нов акаунт. Ако имаш CSV копие или друг телефон със същия акаунт, данните могат да се върнат оттам.
+    const wipeHtml=`<div class="confirm" id="wipeBox">Без код за възстановяване паролата не може да се смени, защото с нея са шифровани данните. Можеш да изтриеш всичко на този телефон и да започнеш с нов акаунт. Ако имаш CSV копие или друг телефон със същия акаунт, данните се връщат оттам.
       <div class="row" style="margin-top:10px"><button type="button" class="btn danger small" id="wipe">Изтрий всичко и започни отначало</button><button type="button" class="btn small" id="noWipe">Отказ</button></div></div>`;
-      $("#noWipe").onclick=()=>$("#forgotBox").innerHTML=""; $("#wipe").onclick=()=>{ A.resetAll(); showAuth(); }; };
+    const bindWipe=()=>{ $("#noWipe").onclick=()=>$("#forgotBox").innerHTML=""; $("#wipe").onclick=()=>{ A.resetAll(); showAuth(); }; };
+    $("#forgot").onclick=()=>{
+      if(!info.recovery){ $("#forgotBox").innerHTML=wipeHtml; bindWipe(); return; }
+      $("#forgotBox").innerHTML=`<div class="card" style="display:grid;gap:12px">
+        <p style="margin:0">Въведи кода за възстановяване от имейла си и избери нова парола.</p>
+        <label for="fc_code">Код за възстановяване<input id="fc_code" autocapitalize="characters" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" class="mono"></label>
+        <label for="fc_p1">Нова парола (поне 6 знака)<input id="fc_p1" type="password" autocomplete="new-password"></label>
+        <label for="fc_p2">Повтори новата парола<input id="fc_p2" type="password" autocomplete="new-password"></label>
+        <div class="err" id="fcErr"></div>
+        <button class="btn primary" type="button" id="fcGo">Задай нова парола</button>
+        <button class="linkbtn" type="button" id="noCode">Нямам кода</button>
+        <div id="wipeSlot"></div></div>`;
+      $("#noCode").onclick=()=>{ $("#wipeSlot").innerHTML=wipeHtml; $("#noWipe").onclick=()=>$("#wipeSlot").innerHTML=""; $("#wipe").onclick=()=>{ A.resetAll(); showAuth(); }; };
+      $("#fcGo").onclick=()=>{ const c=$("#fc_code").value, p1=$("#fc_p1").value;
+        if(c.replace(/[^A-Za-z0-9]/g,"").length<20){ $("#fcErr").textContent="Кодът е 20 знака, например K7QX-2MPD-9RTA-W4HN-5BCE."; return; }
+        if(p1.length<6){ $("#fcErr").textContent="Новата парола трябва да е поне 6 знака."; return; }
+        if(p1!==$("#fc_p2").value){ $("#fcErr").textContent="Паролите не съвпадат."; return; }
+        busy($("#fcGo"),true,"Проверка…"); $("#fcErr").textContent="";
+        setTimeout(()=>{ const r=A.recover($("#l_user").value,c,p1);
+          if(r==="ok"){ unlockedStart(); toast("Паролата е сменена. Смени я и на другите телефони със същия акаунт."); }
+          else { busy($("#fcGo"),false,"Задай нова парола"); $("#fcErr").textContent="Грешен код или потребителско име."; } },60); };
+      setTimeout(()=>$("#fc_code").focus(),50); };
     setTimeout(()=>$("#l_pass").focus(),100);
   } }
 $("#btnLogout").onclick=()=>{ A.logout(); lockScreen(); };
+
+/* ---------- Recovery code ---------- */
+const getMail=()=>{ try{ return localStorage.getItem("recMail")||""; }catch(_){ return ""; } };
+function recoveryPanel(code){ return `<p style="margin:0">Това е кодът за възстановяване на акаунта <b>${esc(ACC().user)}</b>. С него можеш да зададеш нова парола, ако забравиш старата. Изпрати го на имейла си и не го показвай на никого.</p>
+  <div class="rcode">${esc(code)}</div>
+  <label for="r_mail">Твоят имейл<input id="r_mail" type="email" inputmode="email" placeholder="ime@gmail.com" value="${esc(getMail())}"></label>
+  <div class="row"><button class="btn primary" id="rSend" type="button">Изпрати на имейла</button><button class="btn" id="rCopy" type="button">Копирай кода</button></div>
+  <label class="check" for="r_ok"><input id="r_ok" type="checkbox"> Изпратих си кода</label>
+  <button class="btn primary" id="rDone" type="button" disabled>Продължи</button>`; }
+function bindRecovery(code,onDone){
+  $("#rSend").onclick=()=>{ const m=$("#r_mail").value.trim(); if(!/^\S+@\S+\.\S+$/.test(m)){ toast("Въведи имейла си."); $("#r_mail").focus(); return; }
+    try{ localStorage.setItem("recMail",m); }catch(_){}
+    A.email(m,"Поздрави — код за възстановяване",`Код за възстановяване на приложението „Поздрави за клиенти“\n\nПотребител: ${ACC().user}\nКод: ${code}\n\nАко забравиш паролата: на екрана за вход натисни „Забравена парола?“, въведи този код и избери нова парола.\nПази този имейл и не го препращай на никого.`);
+    $("#r_ok").checked=true; $("#rDone").disabled=false; };
+  $("#rCopy").onclick=()=>copy(code,"Кодът е копиран.");
+  $("#r_ok").onchange=()=>$("#rDone").disabled=!$("#r_ok").checked;
+  $("#rDone").onclick=onDone; }
+function showRecoveryAuth(){ const code=A.newRecoveryCode(); if(!code){ unlockedStart(); return; }
+  $("#authBox").innerHTML=`<div class="auth-logo" aria-hidden="true">🔑</div><h2>Код за възстановяване</h2>`+recoveryPanel(code);
+  bindRecovery(code,unlockedStart); }
+function offerRecovery(){ openSheet(`<h3>Създай код за възстановяване</h3><p>Ако забравиш паролата, с този код ще зададеш нова и няма да загубиш клиентите. Кодът се праща на имейла ти.</p>
+  <div class="actions"><span></span><div class="row"><button class="btn" data-close>По-късно</button><button class="btn primary" id="offerGo">Създай сега</button></div></div>`);
+  $("#offerGo").onclick=()=>openRecoverySheet(); }
+function openRecoverySheet(){ const code=A.newRecoveryCode(); if(!code){ toast("Не успях да създам код."); return; }
+  openSheet(`<h3>Код за възстановяване</h3><div style="display:grid;gap:12px">${recoveryPanel(code)}</div>`);
+  bindRecovery(code,()=>{ closeSheet(); fillSettings(); toast("Кодът е запазен."); }); }
+$("#btnRec").onclick=openRecoverySheet;
 $("#btnChpw").onclick=()=>{ openSheet(`<h3>Смяна на паролата</h3><form id="pwForm" style="display:grid;gap:12px">
    <label for="pw_old">Сегашна парола<input id="pw_old" type="password" required></label>
    <label for="pw_new">Нова парола (поне 6 знака)<input id="pw_new" type="password" required minlength="6"></label>

@@ -108,7 +108,17 @@ public class Bridge {
         }
     }
 
-    /* ---------------- account ---------------- */
+    /* ---------------- account ----------------
+     * account.json v2: a random data key (DK) encrypts the data. DK is stored
+     * wrapped twice: with a key from the password (wrapP) and, optionally,
+     * with a key from the recovery code (wrapR). v1 accounts used the
+     * password key directly as the data key and are upgraded on login. */
+
+    private static final String CODE_ABC = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+    static String normCode(String c) {
+        return c == null ? "" : c.toUpperCase().replaceAll("[^A-Z0-9]", "");
+    }
 
     @JavascriptInterface
     public String accountInfo() {
@@ -118,30 +128,45 @@ public class Bridge {
             o.put("exists", a != null);
             o.put("user", a != null ? a.optString("user") : "");
             o.put("unlocked", unlocked());
+            o.put("recovery", a != null && a.has("wrapR"));
             return o.toString();
         } catch (Exception e) {
             return "{\"exists\":false}";
         }
     }
 
+    private void wrapWithPassword(JSONObject a, byte[] dk, String p) throws Exception {
+        byte[] salt = Crypto.random(16);
+        a.put("v", 2);
+        a.put("salt", Crypto.b64(salt));
+        a.put("wrapP", Crypto.enc(Crypto.derive(p, salt), Crypto.b64(dk)));
+        a.remove("check");
+    }
+
+    /** Returns the data key for this password, or throws if it is wrong. */
+    private byte[] unwrapWithPassword(JSONObject a, String p) throws Exception {
+        byte[] k = Crypto.derive(p, Crypto.unb64(a.getString("salt")));
+        if (a.optInt("v", 1) >= 2) return Crypto.unb64(Crypto.dec(k, a.getString("wrapP")));
+        Crypto.dec(k, a.getString("check"));
+        return k; // v1: the password key is the data key
+    }
+
     @JavascriptInterface
     public String createAccount(String u, String p) {
         if (account() != null) return "exists";
         try {
-            byte[] salt = Crypto.random(16);
-            byte[] k = Crypto.derive(p, salt);
+            byte[] dk = Crypto.random(32);
             JSONObject a = new JSONObject();
             a.put("user", u.trim());
-            a.put("salt", Crypto.b64(salt));
-            a.put("check", Crypto.enc(k, "pozdravi-ok"));
+            wrapWithPassword(a, dk, p);
             // migrate data from the unencrypted version
             String old = readFile(act, "data.json");
             if (old.isEmpty()) old = readFile(act, "data.bak.json");
-            if (!old.isEmpty() && !writeFile(act, "data.enc", Crypto.enc(k, old))) return "error";
+            if (!old.isEmpty() && !writeFile(act, "data.enc", Crypto.enc(dk, old))) return "error";
             if (!writeFile(act, "account.json", a.toString())) return "error";
             del("data.json");
             del("data.bak.json");
-            key = k;
+            key = dk;
             pass = p;
             user = u.trim();
             return "ok";
@@ -150,28 +175,39 @@ public class Bridge {
         }
     }
 
+    private static void pause() {
+        try {
+            Thread.sleep(800);
+        } catch (InterruptedException ignored) {
+        }
+    }
+
     @JavascriptInterface
     public String login(String u, String p) {
         JSONObject a = account();
         if (a == null) return "noaccount";
-        try {
-            if (!a.optString("user").equalsIgnoreCase(u.trim())) {
-                Thread.sleep(800);
-                return "bad";
-            }
-            byte[] k = Crypto.derive(p, Crypto.unb64(a.getString("salt")));
-            Crypto.dec(k, a.getString("check"));
-            key = k;
-            pass = p;
-            user = a.optString("user");
-            return "ok";
-        } catch (Exception e) {
-            try {
-                Thread.sleep(800);
-            } catch (InterruptedException ignored) {
-            }
+        if (!a.optString("user").equalsIgnoreCase(u.trim())) {
+            pause();
             return "bad";
         }
+        byte[] dk;
+        try {
+            dk = unwrapWithPassword(a, p);
+        } catch (Exception e) {
+            pause();
+            return "bad";
+        }
+        try {
+            if (a.optInt("v", 1) < 2) {
+                wrapWithPassword(a, dk, p);
+                writeFile(act, "account.json", a.toString());
+            }
+        } catch (Exception ignored) {
+        }
+        key = dk;
+        pass = p;
+        user = a.optString("user");
+        return "ok";
     }
 
     @JavascriptInterface
@@ -183,22 +219,74 @@ public class Bridge {
     public String changePassword(String oldP, String newP) {
         JSONObject a = account();
         if (a == null || key == null) return "error";
+        byte[] dk;
         try {
-            byte[] oldK = Crypto.derive(oldP, Crypto.unb64(a.getString("salt")));
-            Crypto.dec(oldK, a.getString("check"));
-            String data = load();
-            byte[] salt = Crypto.random(16);
-            byte[] k = Crypto.derive(newP, salt);
-            if (!data.isEmpty() && !writeFile(act, "data.enc", Crypto.enc(k, data))) return "error";
-            del("data.bak.enc");
-            a.put("salt", Crypto.b64(salt));
-            a.put("check", Crypto.enc(k, "pozdravi-ok"));
+            dk = unwrapWithPassword(a, oldP);
+        } catch (Exception e) {
+            return "bad";
+        }
+        try {
+            wrapWithPassword(a, dk, newP);
             if (!writeFile(act, "account.json", a.toString())) return "error";
-            key = k;
+            key = dk;
             pass = newP;
             return "ok";
         } catch (Exception e) {
+            return "error";
+        }
+    }
+
+    /** Creates a new recovery code (the old one stops working). Requires an unlocked session. */
+    @JavascriptInterface
+    public String newRecoveryCode() {
+        JSONObject a = account();
+        if (a == null || key == null) return "";
+        try {
+            byte[] r = Crypto.random(20);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 20; i++) {
+                if (i > 0 && i % 4 == 0) sb.append('-');
+                sb.append(CODE_ABC.charAt((r[i] & 0xff) % CODE_ABC.length()));
+            }
+            String code = sb.toString();
+            byte[] saltR = Crypto.random(16);
+            a.put("saltR", Crypto.b64(saltR));
+            a.put("wrapR", Crypto.enc(Crypto.derive(normCode(code), saltR), Crypto.b64(key)));
+            if (a.optInt("v", 1) < 2) wrapWithPassword(a, key, pass);
+            if (!writeFile(act, "account.json", a.toString())) return "";
+            return code;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /** Sets a new password using the recovery code. "ok", "bad" or "norecovery". */
+    @JavascriptInterface
+    public String recover(String u, String code, String newP) {
+        JSONObject a = account();
+        if (a == null) return "noaccount";
+        if (!a.has("wrapR")) return "norecovery";
+        if (!a.optString("user").equalsIgnoreCase(u.trim())) {
+            pause();
             return "bad";
+        }
+        byte[] dk;
+        try {
+            byte[] kr = Crypto.derive(normCode(code), Crypto.unb64(a.getString("saltR")));
+            dk = Crypto.unb64(Crypto.dec(kr, a.getString("wrapR")));
+        } catch (Exception e) {
+            pause();
+            return "bad";
+        }
+        try {
+            wrapWithPassword(a, dk, newP);
+            if (!writeFile(act, "account.json", a.toString())) return "error";
+            key = dk;
+            pass = newP;
+            user = a.optString("user");
+            return "ok";
+        } catch (Exception e) {
+            return "error";
         }
     }
 
@@ -417,12 +505,12 @@ public class Bridge {
         }
         final String payload;
         try {
-            JSONObject a = account();
+            byte[] salt = Crypto.random(16);
             JSONObject o = new JSONObject();
-            o.put("v", 1);
+            o.put("v", 2);
             o.put("user", user);
-            o.put("salt", a.getString("salt"));
-            o.put("data", Crypto.enc(key, json));
+            o.put("salt", Crypto.b64(salt));
+            o.put("data", Crypto.enc(Crypto.derive(pass, salt), json));
             payload = o.toString();
         } catch (Exception e) {
             emit("error", "Не успях да подготвя данните.");
