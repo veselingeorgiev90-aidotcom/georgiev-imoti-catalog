@@ -2,10 +2,18 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
+    <group android:pivotX="54" android:pivotY="53" android:scaleX="1.28" android:scaleY="1.28">
+    <!-- calendar page -->
     <path android:fillColor="#FFFFFF"
-        android:pathData="M37,38h34a5,5 0 0 1 5,5v28a5,5 0 0 1 -5,5h-34a5,5 0 0 1 -5,-5v-28a5,5 0 0 1 5,-5z" />
-    <path android:fillColor="#BFE3D7" android:pathData="M32,46h44v3h-44z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M41,31h5v11h-5zM62,31h5v11h-5z" />
-    <path android:fillColor="#0E6B57"
-        android:pathData="M54,72l-1.2,-1.1C48.5,67 46,64.7 46,61.8 46,59.4 47.9,57.5 50.2,57.5c1.4,0 2.8,0.7 3.8,1.7 1,-1 2.4,-1.7 3.8,-1.7 2.3,0 4.2,1.9 4.2,4.3 0,2.9 -2.5,5.2 -6.8,9.1z" />
+        android:pathData="M37,36h34a5,5 0 0 1 5,5v30a5,5 0 0 1 -5,5h-34a5,5 0 0 1 -5,-5v-30a5,5 0 0 1 5,-5z" />
+    <!-- gold header band -->
+    <path android:fillColor="#C9A24B"
+        android:pathData="M37,36h34a5,5 0 0 1 5,5v6h-44v-6a5,5 0 0 1 5,-5z" />
+    <!-- binder rings -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M43,30h3a1.5,1.5 0 0 1 1.5,1.5v8a1.5,1.5 0 0 1 -1.5,1.5h-3a1.5,1.5 0 0 1 -1.5,-1.5v-8a1.5,1.5 0 0 1 1.5,-1.5zM62,30h3a1.5,1.5 0 0 1 1.5,1.5v8a1.5,1.5 0 0 1 -1.5,1.5h-3a1.5,1.5 0 0 1 -1.5,-1.5v-8a1.5,1.5 0 0 1 1.5,-1.5z" />
+    <!-- bell -->
+    <path android:fillColor="#13294B"
+        android:pathData="M54,51.5c-4.4,0 -7.2,3.3 -7.2,7.4v4.7l-2.4,2.9h19.2l-2.4,-2.9v-4.7c0,-4.1 -2.8,-7.4 -7.2,-7.4zM51.6,68.2a2.4,2.4 0 0 0 4.8,0z" />
+    </group>
 </vector>

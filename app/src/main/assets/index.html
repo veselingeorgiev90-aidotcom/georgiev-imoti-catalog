@@ -1,6 +1,6 @@
 <!doctype html><html lang="bg"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Поздрави за клиенти</title>
+<title>Reminder</title>
 <style>
 /* Layout: one narrow column, app-style — tab bar on top, scannable event rows with send actions */
 :root{
@@ -112,7 +112,7 @@ textarea{min-height:84px;resize:vertical}
 .auth{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;display:flex;justify-content:center;
   padding:calc(40px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) 30px max(20px,env(safe-area-inset-left,0px))}
 .auth-box{width:100%;max-width:400px;display:grid;gap:14px;align-content:start}
-.auth-logo{width:64px;height:64px;border-radius:18px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);font-size:30px}
+.auth-logo{width:64px;height:64px;border-radius:18px;background:#13294B;display:grid;place-items:center;color:var(--accent-ink);font-size:30px}
 .auth h2{font-family:var(--f-display);font-size:22px;margin:4px 0 0;font-weight:800}
 .auth p{margin:0;color:var(--muted)}
 .auth .btn{padding:13px;font-size:16px}
@@ -136,7 +136,7 @@ textarea{min-height:84px;resize:vertical}
 
 <div class="wrap">
   <header>
-    <div class="brand"><h1>Поздрави за клиенти</h1><span class="today" id="todayLbl"></span></div>
+    <div class="brand"><h1>Reminder</h1><span class="today" id="todayLbl"></span></div>
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-up" aria-selected="true" data-tab="up">Предстоящи</button>
       <button role="tab" id="tab-c" aria-selected="false" data-tab="c">Клиенти</button>
@@ -611,7 +611,7 @@ window.onLocked=lockScreen;
 const busy=(btn,on,txt)=>{ btn.disabled=on; btn.textContent=txt; };
 function showAuth(){ const info=ACC(); const box=$("#authBox"); $("#auth").hidden=false;
   if(!info.exists){
-    box.innerHTML=`<div class="auth-logo" aria-hidden="true">♥</div><h2>Създай акаунт</h2>
+    box.innerHTML=`<div class="auth-logo"><svg viewBox="30 28 48 50" width="40" height="40" aria-hidden="true"><path fill="#fff" d="M37,36h34a5,5 0 0 1 5,5v30a5,5 0 0 1 -5,5h-34a5,5 0 0 1 -5,-5v-30a5,5 0 0 1 5,-5z"/><path fill="#C9A24B" d="M37,36h34a5,5 0 0 1 5,5v6h-44v-6a5,5 0 0 1 5,-5z"/><path fill="#fff" d="M43,30h3a1.5,1.5 0 0 1 1.5,1.5v8a1.5,1.5 0 0 1 -1.5,1.5h-3a1.5,1.5 0 0 1 -1.5,-1.5v-8a1.5,1.5 0 0 1 1.5,-1.5zM62,30h3a1.5,1.5 0 0 1 1.5,1.5v8a1.5,1.5 0 0 1 -1.5,1.5h-3a1.5,1.5 0 0 1 -1.5,-1.5v-8a1.5,1.5 0 0 1 1.5,-1.5z"/><path fill="#13294B" d="M54,51.5c-4.4,0 -7.2,3.3 -7.2,7.4v4.7l-2.4,2.9h19.2l-2.4,-2.9v-4.7c0,-4.1 -2.8,-7.4 -7.2,-7.4zM51.6,68.2a2.4,2.4 0 0 0 4.8,0z"/></svg></div><h2>Създай акаунт</h2>
      <p>Данните ти ще се шифроват с паролата. Без нея никой не може да ги прочете.</p>
      <form id="aForm" style="display:grid;gap:12px" autocomplete="off">
       <label for="a_user">Потребителско име<input id="a_user" required autocapitalize="none" autocomplete="username"></label>
@@ -630,7 +630,7 @@ function showAuth(){ const info=ACC(); const box=$("#authBox"); $("#auth").hidde
       setTimeout(()=>{ const r=A.createAccount(u,p); if(r==="ok") showRecoveryAuth(); else { busy($("#aGo"),false,"Създай акаунт"); $("#aErr").textContent="Не успях да създам акаунта. Опитай пак."; } },60); };
     setTimeout(()=>$("#a_user").focus(),100);
   } else {
-    box.innerHTML=`<div class="auth-logo" aria-hidden="true">♥</div><h2>Вход</h2><p>Поздрави за клиенти</p>
+    box.innerHTML=`<div class="auth-logo"><svg viewBox="30 28 48 50" width="40" height="40" aria-hidden="true"><path fill="#fff" d="M37,36h34a5,5 0 0 1 5,5v30a5,5 0 0 1 -5,5h-34a5,5 0 0 1 -5,-5v-30a5,5 0 0 1 5,-5z"/><path fill="#C9A24B" d="M37,36h34a5,5 0 0 1 5,5v6h-44v-6a5,5 0 0 1 5,-5z"/><path fill="#fff" d="M43,30h3a1.5,1.5 0 0 1 1.5,1.5v8a1.5,1.5 0 0 1 -1.5,1.5h-3a1.5,1.5 0 0 1 -1.5,-1.5v-8a1.5,1.5 0 0 1 1.5,-1.5zM62,30h3a1.5,1.5 0 0 1 1.5,1.5v8a1.5,1.5 0 0 1 -1.5,1.5h-3a1.5,1.5 0 0 1 -1.5,-1.5v-8a1.5,1.5 0 0 1 1.5,-1.5z"/><path fill="#13294B" d="M54,51.5c-4.4,0 -7.2,3.3 -7.2,7.4v4.7l-2.4,2.9h19.2l-2.4,-2.9v-4.7c0,-4.1 -2.8,-7.4 -7.2,-7.4zM51.6,68.2a2.4,2.4 0 0 0 4.8,0z"/></svg></div><h2>Вход</h2><p>Reminder · напомняния и поздрави за клиенти</p>
      <form id="lForm" style="display:grid;gap:12px" autocomplete="off">
       <label for="l_user">Потребителско име<input id="l_user" required autocapitalize="none" autocomplete="username" value="${esc(info.user)}"></label>
       <label for="l_pass">Парола<input id="l_pass" type="password" required autocomplete="current-password"></label>
@@ -681,13 +681,13 @@ function recoveryPanel(code){ return `<p style="margin:0">Това е кодът
 function bindRecovery(code,onDone){
   $("#rSend").onclick=()=>{ const m=$("#r_mail").value.trim(); if(!/^\S+@\S+\.\S+$/.test(m)){ toast("Въведи имейла си."); $("#r_mail").focus(); return; }
     try{ localStorage.setItem("recMail",m); }catch(_){}
-    A.email(m,"Поздрави — код за възстановяване",`Код за възстановяване на приложението „Поздрави за клиенти“\n\nПотребител: ${ACC().user}\nКод: ${code}\n\nАко забравиш паролата: на екрана за вход натисни „Забравена парола?“, въведи този код и избери нова парола.\nПази този имейл и не го препращай на никого.`);
+    A.email(m,"Reminder — код за възстановяване",`Код за възстановяване на приложението Reminder\n\nПотребител: ${ACC().user}\nКод: ${code}\n\nАко забравиш паролата: на екрана за вход натисни „Забравена парола?“, въведи този код и избери нова парола.\nПази този имейл и не го препращай на никого.`);
     $("#r_ok").checked=true; $("#rDone").disabled=false; };
   $("#rCopy").onclick=()=>copy(code,"Кодът е копиран.");
   $("#r_ok").onchange=()=>$("#rDone").disabled=!$("#r_ok").checked;
   $("#rDone").onclick=onDone; }
 function showRecoveryAuth(){ const code=A.newRecoveryCode(); if(!code){ unlockedStart(); return; }
-  $("#authBox").innerHTML=`<div class="auth-logo" aria-hidden="true">🔑</div><h2>Код за възстановяване</h2>`+recoveryPanel(code);
+  $("#authBox").innerHTML=`<div class="auth-logo"><svg viewBox="30 28 48 50" width="40" height="40" aria-hidden="true"><path fill="#fff" d="M37,36h34a5,5 0 0 1 5,5v30a5,5 0 0 1 -5,5h-34a5,5 0 0 1 -5,-5v-30a5,5 0 0 1 5,-5z"/><path fill="#C9A24B" d="M37,36h34a5,5 0 0 1 5,5v6h-44v-6a5,5 0 0 1 5,-5z"/><path fill="#fff" d="M43,30h3a1.5,1.5 0 0 1 1.5,1.5v8a1.5,1.5 0 0 1 -1.5,1.5h-3a1.5,1.5 0 0 1 -1.5,-1.5v-8a1.5,1.5 0 0 1 1.5,-1.5zM62,30h3a1.5,1.5 0 0 1 1.5,1.5v8a1.5,1.5 0 0 1 -1.5,1.5h-3a1.5,1.5 0 0 1 -1.5,-1.5v-8a1.5,1.5 0 0 1 1.5,-1.5z"/><path fill="#13294B" d="M54,51.5c-4.4,0 -7.2,3.3 -7.2,7.4v4.7l-2.4,2.9h19.2l-2.4,-2.9v-4.7c0,-4.1 -2.8,-7.4 -7.2,-7.4zM51.6,68.2a2.4,2.4 0 0 0 4.8,0z"/></svg></div><h2>Код за възстановяване</h2>`+recoveryPanel(code);
   bindRecovery(code,unlockedStart); }
 function offerRecovery(){ openSheet(`<h3>Създай код за възстановяване</h3><p>Ако забравиш паролата, с този код ще зададеш нова и няма да загубиш клиентите. Кодът се праща на имейла ти.</p>
   <div class="actions"><span></span><div class="row"><button class="btn" data-close>По-късно</button><button class="btn primary" id="offerGo">Създай сега</button></div></div>`);

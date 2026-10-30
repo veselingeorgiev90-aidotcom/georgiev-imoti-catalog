@@ -8,5 +8,5 @@
         <item name="android:colorAccent">#0E6B57</item>
     </style>
     <color name="bg">#F2F4F3</color>
-    <color name="icon_bg">#0E6B57</color>
+    <color name="icon_bg">#13294B</color>
 </resources>

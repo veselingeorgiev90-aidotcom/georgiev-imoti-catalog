@@ -63,7 +63,7 @@ public class Scheduler {
         if (s.isEmpty()) return;
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
-        nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Напомняния за поздрави",
+        nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Reminder — напомняния",
                 NotificationManager.IMPORTANCE_HIGH));
         Intent open = new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pi = PendingIntent.getActivity(c, 1, open,
@@ -76,7 +76,7 @@ public class Scheduler {
                 if (!day.equals(o.optString("d"))) continue;
                 Notification n = new Notification.Builder(c, CHANNEL)
                         .setSmallIcon(R.drawable.ic_notify)
-                        .setColor(0xFF0E6B57)
+                        .setColor(0xFF13294B)
                         .setContentTitle(o.optString("t"))
                         .setContentText(o.optString("b"))
                         .setStyle(new Notification.BigTextStyle().bigText(o.optString("b")))

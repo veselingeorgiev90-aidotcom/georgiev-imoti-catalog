@@ -1,4 +1,4 @@
-name: Поздрави APK
+name: Reminder APK
 on:
   push:
     branches: [android-app]
@@ -24,16 +24,16 @@ jobs:
         run: |
           cp signing/release.jks app/release.jks
           gradle --no-daemon assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk Pozdravi.apk
+          cp app/build/outputs/apk/release/app-release.apk Reminder.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Pozdravi-apk
-          path: Pozdravi.apk
+          name: Reminder-apk
+          path: Reminder.apk
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete pozdravi-app -y --cleanup-tag || true
-          gh release create pozdravi-app Pozdravi.apk --target ${{ github.sha }} --latest=false \
-            --title "Поздрави за клиенти — версия 1.0.${{ github.run_number }}" \
-            --notes "Android приложение за напомняния и поздрави към клиенти. Изтегли Pozdravi.apk на телефона и го инсталирай."
+          gh release create pozdravi-app Reminder.apk --target ${{ github.sha }} --latest=false \
+            --title "Reminder — версия 1.0.${{ github.run_number }}" \
+            --notes "Android приложение за напомняния и поздрави към клиенти. Изтегли Reminder.apk на телефона и го инсталирай."
