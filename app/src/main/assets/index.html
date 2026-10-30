@@ -67,6 +67,18 @@ button,input,select,textarea{font-family:var(--f-body);font-size:15px;color:var(
 .seg button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .search{width:100%;padding:11px 13px;border-radius:11px;border:1px solid var(--line);background:var(--surface)}
+.clist{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.letter{background:var(--bg);color:var(--accent);font-weight:800;font-size:13px;padding:5px 14px;border-bottom:1px solid var(--line)}
+.crow{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.crow:last-child{border-bottom:0}
+.crow:active{background:var(--accent-soft)}
+.crow .meta{min-width:0}
+.crow .nm{font-weight:700;overflow-wrap:anywhere}
+.crow .dt{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.nextev{flex:none;text-align:right;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.3}
+.nextev b{display:block;color:var(--accent);font-size:13px}
+.nextev.soon b{color:var(--gold)}
+.list-tools{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
 .contact{display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer}
 .contact .meta{min-width:0}
 .contact .nm{font-weight:700;overflow-wrap:anywhere}
@@ -137,7 +149,9 @@ textarea{min-height:84px;resize:vertical}
     </div>
     <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
     <input class="search" id="q" type="search" placeholder="Търси по име, телефон, имот…">
-    <div class="list" id="cList" style="margin-top:10px"></div>
+    <div class="list-tools"><span class="hint">Подреди:</span>
+      <div class="seg" id="sortSeg"><button data-s="name" aria-pressed="true">По име</button><button data-s="next" aria-pressed="false">По най-близък повод</button></div></div>
+    <div id="cList" style="margin-top:10px"></div>
   </main>
 
   <main id="view-t" hidden>
@@ -354,21 +368,36 @@ function emptyState(){ return `<div class="card empty"><h3>Все още ням�
 function bindEmpty(){ document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ if(b.dataset.go==="add") openForm(null); else $("#csvFile").click(); }); }
 
 /* ---------- Render: contacts ---------- */
+let sortBy="name";
+function nextEvent(c){ const from=today(), to=new Date(from); to.setDate(to.getDate()+366);
+  return eventsFor(c,from,to).sort((a,b)=>a.date-b.date)[0]||null; }
 function renderContacts(){
   const q=$("#q").value.trim().toLowerCase(); const el=$("#cList");
   $("#cCount").textContent=`Клиенти (${contacts.length})`;
   if(!ready){ el.innerHTML=`<div class="card empty">Зареждане…</div>`; return; }
-  const list=contacts.filter(c=>!q||[c.firstName,c.lastName,c.phone,c.email,c.property,c.notes].join(" ").toLowerCase().includes(q))
-    .sort((a,b)=>(a.firstName+a.lastName).localeCompare(b.firstName+b.lastName,"bg"));
   if(!contacts.length){ el.innerHTML=emptyState(); bindEmpty(); return; }
+  const from=today();
+  let list=contacts.filter(c=>!q||[c.firstName,c.lastName,c.phone,c.email,c.property,c.notes].join(" ").toLowerCase().includes(q))
+    .map(c=>({c,nx:nextEvent(c)}));
   if(!list.length){ el.innerHTML=`<div class="card empty">Няма съвпадения за „${esc(q)}“.</div>`; return; }
-  el.innerHTML=list.map(c=>{ const bd=c.birthDate||(egnInfo(c.egn)||{}).birth; const nd=nameDayFor(c);
-    const bits=[c.phone, bd?"🎂 "+fmtDate(bd):"", nd?"имен ден: "+nameDayLabel(nd):"", c.dealDate?"сделка: "+fmtDate(c.dealDate):""].filter(Boolean);
-    return `<div class="card contact" data-id="${esc(c.id)}" tabindex="0" role="button"><div class="meta"><div class="nm">${esc(c.firstName)} ${esc(c.lastName||"")}</div>
-      <div class="dt mono">${bits.map(esc).join(" · ")}</div>${c.property?`<div class="dt">${esc(c.property)}</div>`:""}</div><span class="btn small">Отвори</span></div>`; }).join("");
-  el.onclick=e=>{ const r=e.target.closest(".contact"); if(r) openForm(contacts.find(c=>c.id===r.dataset.id)); };
-  el.onkeydown=e=>{ if(e.key==="Enter"){ const r=e.target.closest(".contact"); if(r) openForm(contacts.find(c=>c.id===r.dataset.id)); } };
+  const full=x=>`${x.c.firstName||""} ${x.c.lastName||""}`.trim();
+  if(sortBy==="next") list.sort((a,b)=>(a.nx?a.nx.date:Infinity)-(b.nx?b.nx.date:Infinity)||full(a).localeCompare(full(b),"bg"));
+  else list.sort((a,b)=>full(a).localeCompare(full(b),"bg"));
+  const kind={birthday:"🎂 рожден ден",nameday:"🌿 имен ден",deal:"🏠 покупка",custom:"🎉 "};
+  let html="", last=null;
+  for(const x of list){ const c=x.c;
+    if(sortBy==="name"){ const L=(full(x)[0]||"#").toUpperCase(); if(L!==last){ html+=`<div class="letter">${esc(L)}</div>`; last=L; } }
+    let nx="";
+    if(x.nx){ const days=Math.round((x.nx.date-from)/864e5); const lbl=x.nx.type==="custom"?kind.custom+x.nx.label:kind[x.nx.type];
+      nx=`<div class="nextev ${days<=7?"soon":""}"><b>${days===0?"днес":days===1?"утре":x.nx.date.getDate()+" "+MONTHS[x.nx.date.getMonth()]}</b>${esc(lbl)}</div>`; }
+    const sub=[c.phone,c.property].filter(Boolean).map(esc).join(" · ");
+    html+=`<div class="crow" data-id="${esc(c.id)}" tabindex="0" role="button"><div class="meta"><div class="nm">${esc(full(x))}</div>${sub?`<div class="dt">${sub}</div>`:""}</div>${nx}</div>`; }
+  el.innerHTML=`<div class="clist">${html}</div>`;
+  el.onclick=e=>{ const r=e.target.closest(".crow"); if(r) openForm(contacts.find(c=>c.id===r.dataset.id)); };
+  el.onkeydown=e=>{ if(e.key==="Enter"){ const r=e.target.closest(".crow"); if(r) openForm(contacts.find(c=>c.id===r.dataset.id)); } };
 }
+$("#sortSeg").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; sortBy=b.dataset.s;
+  document.querySelectorAll("#sortSeg button").forEach(x=>x.setAttribute("aria-pressed",x===b)); renderContacts(); };
 
 /* ---------- Form ---------- */
 function openSheet(html){ const o=$("#overlay"); o.innerHTML=`<div class="sheet" role="dialog" aria-modal="true">${html}</div>`; o.hidden=false;
