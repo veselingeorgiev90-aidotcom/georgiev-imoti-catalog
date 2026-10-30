@@ -1,0 +1,39 @@
+name: Поздрави APK
+on:
+  push:
+    branches: [android-app]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build APK
+        env:
+          KS_PASS: 'eb65a97a682f47ecf877f1bba6efdd59'
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          cp signing/release.jks app/release.jks
+          gradle --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk Pozdravi.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pozdravi-apk
+          path: Pozdravi.apk
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete pozdravi-app -y --cleanup-tag || true
+          gh release create pozdravi-app Pozdravi.apk --target ${{ github.sha }} --latest=false \
+            --title "Поздрави за клиенти — версия 1.0.${{ github.run_number }}" \
+            --notes "Android приложение за напомняния и поздрави към клиенти. Изтегли Pozdravi.apk на телефона и го инсталирай."

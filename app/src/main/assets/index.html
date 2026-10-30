@@ -1,0 +1,540 @@
+<!doctype html><html lang="bg"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Поздрави за клиенти</title>
+<style>
+/* Layout: one narrow column, app-style — tab bar on top, scannable event rows with send actions */
+:root{
+  --bg:#F2F4F3; --surface:#FFFFFF; --ink:#18231F; --muted:#5D6B66; --line:#DCE3E0;
+  --accent:#0E6B57; --accent-ink:#FFFFFF; --accent-soft:#DDEFE9;
+  --gold:#B07A12; --gold-soft:#F6EBD3; --danger:#B3261E; --danger-soft:#F8E1DF;
+  --viber:#6F4BB8; --shadow:0 1px 2px rgba(20,40,35,.06),0 4px 14px rgba(20,40,35,.05);
+  --f-display:system-ui,-apple-system,Roboto,"Segoe UI",sans-serif;
+  --f-body:system-ui,-apple-system,Roboto,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18201D; --ink:#E6EEEA; --muted:#97A7A1; --line:#2A3531;
+  --accent:#4CC2A3; --accent-ink:#06231C; --accent-soft:#16342C;
+  --gold:#E2B252; --gold-soft:#33291A; --danger:#F08A80; --danger-soft:#3A1F1C;
+  --viber:#A98BEA; --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201D; --ink:#E6EEEA; --muted:#97A7A1; --line:#2A3531;
+  --accent:#4CC2A3; --accent-ink:#06231C; --accent-soft:#16342C;
+  --gold:#E2B252; --gold-soft:#33291A; --danger:#F08A80; --danger-soft:#3A1F1C;
+  --viber:#A98BEA; --shadow:none; color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:720px;margin:0 auto}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px;display:grid;gap:12px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:21px;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.today{color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);font:600 14px var(--f-body);padding:9px 6px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+button,input,select,textarea{font-family:var(--f-body);font-size:15px;color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  border-radius:10px;padding:9px 13px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.small{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn.viber{color:var(--viber);border-color:var(--viber)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.section-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:18px 0 8px;flex-wrap:wrap}
+.section-h h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:700}
+.list{display:grid;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);min-width:0}
+.ev{display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:start}
+.when{border-radius:10px;background:var(--accent-soft);color:var(--accent);text-align:center;padding:7px 4px;font-variant-numeric:tabular-nums}
+.when b{display:block;font-size:20px;line-height:1.1}
+.when span{font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.ev.is-today .when{background:var(--gold-soft);color:var(--gold)}
+.ev-title{font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.ev-sub{color:var(--muted);font-size:13.5px;margin-top:1px;overflow-wrap:anywhere}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-right:6px;vertical-align:1px}
+.chip.gold{background:var(--gold-soft);color:var(--gold)}
+.chip.done{background:var(--line);color:var(--muted)}
+.ev .row{margin-top:10px}
+.ev.sent{opacity:.62}
+.empty{text-align:center;color:var(--muted);padding:28px 14px}
+.empty h3{color:var(--ink);font-size:17px;margin:0 0 6px}
+.demo{margin-top:16px;text-align:left;border-style:dashed}
+.demo-tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.search{width:100%;padding:11px 13px;border-radius:11px;border:1px solid var(--line);background:var(--surface)}
+.contact{display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer}
+.contact .meta{min-width:0}
+.contact .nm{font-weight:700;overflow-wrap:anywhere}
+.contact .dt{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.mono{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+/* overlay form */
+.overlay{position:fixed;inset:0;z-index:20;background:rgba(10,20,16,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+@media (min-width:700px){.overlay{align-items:center}.sheet{border-radius:18px}}
+.sheet h3{font-family:var(--f-display);font-weight:600;font-size:17px;margin:0 0 14px}
+fieldset{border:0;margin:0 0 16px;padding:0;display:grid;gap:10px}
+legend{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px;padding:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:460px){.grid2{grid-template-columns:1fr}}
+label{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--muted);min-width:0}
+input,select,textarea{width:100%;padding:10px 11px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:400}
+textarea{min-height:84px;resize:vertical}
+.hint{font-size:12.5px;color:var(--muted);font-weight:400}
+.hint.ok{color:var(--accent)}.hint.bad{color:var(--danger)}
+.custom-ev{display:grid;grid-template-columns:1fr 150px 36px;gap:8px;align-items:end}
+@media (max-width:460px){.custom-ev{grid-template-columns:1fr 1fr 36px}}
+.x{border:1px solid var(--line);background:var(--surface);border-radius:9px;height:42px;cursor:pointer;color:var(--muted)}
+.actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom,0px));background:var(--bg);padding-block:12px}
+.confirm{background:var(--danger-soft);border:1px solid var(--danger);border-radius:12px;padding:12px;margin-bottom:12px;color:var(--ink)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:99px;font-weight:600;font-size:14px;z-index:30;max-width:calc(100% - 32px);text-align:center}
+.note{font-size:12.5px;color:var(--muted);margin-top:22px;display:flex;gap:8px;align-items:flex-start}
+.tpl label{color:var(--ink)}
+.banner{background:var(--danger-soft);color:var(--ink);border:1px solid var(--danger);border-radius:12px;padding:12px;margin-top:12px}
+@media (prefers-reduced-motion:no-preference){.overlay .sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}}
+[hidden]{display:none!important}
+.set-row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.check{display:flex;gap:10px;align-items:center;color:var(--ink);font-size:15px;font-weight:500}
+.check input{width:22px;height:22px;accent-color:var(--accent)}
+</style></head><body>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>Поздрави за клиенти</h1><span class="today" id="todayLbl"></span></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-up" aria-selected="true" data-tab="up">Предстоящи</button>
+      <button role="tab" id="tab-c" aria-selected="false" data-tab="c">Клиенти</button>
+      <button role="tab" id="tab-t" aria-selected="false" data-tab="t">Настройки</button>
+    </div>
+  </header>
+
+
+  <main id="view-up">
+    <div class="section-h"><h2>Поводи за поздрав</h2>
+      <div class="seg" id="range">
+        <button data-d="7" aria-pressed="false">7 дни</button>
+        <button data-d="30" aria-pressed="true">30 дни</button>
+        <button data-d="90" aria-pressed="false">3 месеца</button>
+        <button data-d="365" aria-pressed="false">1 година</button>
+      </div>
+    </div>
+    <div class="list" id="upList"></div>
+  </main>
+
+  <main id="view-c" hidden>
+    <div class="section-h"><h2 id="cCount">Клиенти</h2>
+      <div class="row">
+        <button class="btn small" id="btnImport">Импорт CSV</button>
+        <button class="btn small" id="btnExport">Експорт CSV</button>
+        <button class="btn primary small" id="btnAdd">+ Нов клиент</button>
+      </div>
+    </div>
+    <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+    <input class="search" id="q" type="search" placeholder="Търси по име, телефон, имот…">
+    <div class="list" id="cList" style="margin-top:10px"></div>
+  </main>
+
+  <main id="view-t" hidden>
+    <div class="section-h"><h2>Напомняния</h2></div>
+    <div class="card" style="display:grid;gap:14px">
+      <div class="set-row"><label for="s_time" style="color:var(--ink);font-size:15px">Час на известието в деня на празника</label><input id="s_time" type="time" style="width:130px"></div>
+      <label class="check" for="s_before"><input id="s_before" type="checkbox"> Напомни ми и предния ден</label>
+      <div class="row"><button class="btn primary" id="saveRem" type="button">Запази</button><button class="btn" id="testNotif" type="button">Покажи пробно известие сега</button></div>
+    </div>
+    <div class="section-h"><h2>Текстове на поздравите</h2></div>
+    <div class="card tpl">
+      <p class="hint" style="margin-top:0">Можеш да ползваш: <b>{име}</b> — обръщение към клиента, <b>{години}</b> — напр. „3 години“, <b>{имот}</b> — кой имот е купен, <b>{повод}</b> — името на семейния празник, <b>{здрав}</b> — „здрав“ или „здрава“ според пола, <b>{подпис}</b>.</p>
+      <form id="tplForm">
+        <fieldset>
+          <label for="t_sig">Подпис<input id="t_sig" name="sig"></label>
+          <label for="t_birthday">Рожден ден<textarea id="t_birthday" name="birthday"></textarea></label>
+          <label for="t_nameday">Имен ден<textarea id="t_nameday" name="nameday"></textarea></label>
+          <label for="t_deal">Годишнина от покупката<textarea id="t_deal" name="deal"></textarea></label>
+          <label for="t_custom">Семеен празник<textarea id="t_custom" name="custom"></textarea></label>
+        </fieldset>
+        <div class="row"><button class="btn primary" type="submit">Запази текстовете</button><button class="btn" type="button" id="tplReset">Върни стандартните</button></div>
+      </form>
+    </div>
+  </main>
+
+  <p class="note"><span aria-hidden="true">🔒</span><span>Данните са само на този телефон. Приложението няма достъп до интернет и не праща нищо никъде. ЕГН се показва скрито. Прави си от време на време резервно копие с „Експорт CSV“.</span></p>
+</div>
+
+<div id="overlay" class="overlay" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const MONTHS=["яну","фев","мар","апр","май","юни","юли","авг","сеп","окт","ное","дек"];
+const MONTHS_FULL=["януари","февруари","март","април","май","юни","юли","август","септември","октомври","ноември","декември"];
+const DOW=["неделя","понеделник","вторник","сряда","четвъртък","петък","събота"];
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+function parseDate(s){ if(!s) return null; const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if(!m) return null; return {y:+m[1],m:+m[2],d:+m[3]}; }
+function fmtDate(s){ const p=parseDate(s); return p? `${p.d} ${MONTHS_FULL[p.m-1]} ${p.y}`:""; }
+const today=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
+function yearsWord(n){ return n===1? "1 година" : n+" години"; }
+let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2600); }
+
+/* ---------- ЕГН ---------- */
+function egnInfo(egn){
+  egn=String(egn||"").trim(); if(!/^\d{10}$/.test(egn)) return null;
+  let y=+egn.slice(0,2), m=+egn.slice(2,4), d=+egn.slice(4,6);
+  if(m>40){m-=40;y+=2000;} else if(m>20){m-=20;y+=1800;} else y+=1900;
+  const dt=new Date(y,m-1,d); if(dt.getMonth()!==m-1||dt.getDate()!==d) return {valid:false};
+  const w=[2,4,8,5,10,9,7,3,6]; let s=0; for(let i=0;i<9;i++) s+=w[i]*+egn[i];
+  let c=s%11; if(c===10) c=0;
+  return {valid:c===+egn[9], birth:`${y}-${pad(m)}-${pad(d)}`, gender:(+egn[8])%2===0?"m":"f"};
+}
+const maskEgn=e=>e? "••••••"+String(e).slice(-4):"";
+
+/* ---------- Phone ---------- */
+function normPhone(p){
+  let s=String(p||"").replace(/[^\d+]/g,""); if(!s) return "";
+  if(s.startsWith("00")) s="+"+s.slice(2);
+  if(s.startsWith("0")) s="+359"+s.slice(1);
+  if(!s.startsWith("+")) s=(s.startsWith("359")?"+":"+359")+s;
+  return s;
+}
+
+/* ---------- Именни дни ---------- */
+function orthodoxEaster(y){ const a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7;
+  const mo=Math.floor((d+e+114)/31), da=((d+e+114)%31)+1; const j=new Date(y,mo-1,da); j.setDate(j.getDate()+13); return j; }
+const ND_FIXED={
+ "01-01":["Васил","Василка","Василена"],
+ "01-06":["Йордан","Йорданка","Данчо","Дана"],
+ "01-07":["Иван","Иванка","Ивана","Йоан","Иво","Ивайло","Ваня","Яна","Жан"],
+ "01-12":["Татяна","Таня"],
+ "01-17":["Антон","Антония","Антоанета","Тони"],
+ "01-18":["Атанас","Атанаска","Наско","Тинка"],
+ "01-25":["Григор","Григорий"],
+ "02-03":["Симеон","Симона","Моника"],
+ "02-10":["Харалампи","Ламби"],
+ "02-14":["Трифон","Трифонка"],
+ "03-09":["Младен","Младена"],
+ "03-25":["Благой","Благовест","Благовеста","Блага","Вангел","Евангелина"],
+ "05-06":["Георги","Гергана","Гергин","Галя","Генчо","Гинка","Гошо"],
+ "05-11":["Кирил","Кирилка","Методий"],
+ "05-21":["Константин","Костадин","Костадинка","Елена","Елин","Кольо","Ленко"],
+ "06-24":["Еньо","Енчо"],
+ "06-29":["Петър","Петра","Петя","Павел","Павлина","Пепа"],
+ "07-20":["Илия","Илиян","Илияна","Илко"],
+ "07-27":["Пантелей"],
+ "08-15":["Мария","Мариана","Марияна","Мариела","Маринела","Мара","Марио","Мариян"],
+ "09-14":["Кръстьо","Кръстина","Кристина"],
+ "09-17":["Вяра","Надежда","Надя","Любов","Люба","Любомир","София"],
+ "10-14":["Петко","Параскева"],
+ "10-26":["Димитър","Димитрина","Митко","Димо","Деметра"],
+ "11-08":["Михаил","Михаела","Гаврил","Ангел","Ангелина","Рангел","Рафаел"],
+ "11-24":["Екатерина","Катерина","Катя"],
+ "11-30":["Андрей","Андреа","Андриана"],
+ "12-04":["Варвара"],
+ "12-06":["Никола","Николай","Николина","Николета","Ники"],
+ "12-09":["Анна","Ана","Анета","Анелия","Ани"],
+ "12-12":["Спиридон","Спас"],
+ "12-20":["Игнат","Игнатий"],
+ "12-22":["Анастасия"],
+ "12-25":["Христо","Христина","Кристиан","Божидар","Божидара","Емануил","Радостина"],
+ "12-27":["Стефан","Стефка","Стефания","Стоян","Стоянка","Венцислав","Венцислава"]
+};
+const ND_MOVE={ lazar:{off:-8,names:["Лазар","Лазарина"],label:"Лазаровден"},
+  cvet:{off:-7,names:["Цветан","Цветана","Цвета","Цветелина","Цветомир","Лиляна","Лилия","Лили","Роза","Ружа","Виолета","Маргарита","Камелия","Жасмина","Невена","Теменуга","Божура","Латинка","Иглика","Ралица","Калина","Здравка"],label:"Цветница"},
+  vel:{off:0,names:["Велико","Велика","Величко","Велин","Велина"],label:"Великден"} };
+const ND_INDEX=(()=>{const m={}; for(const k in ND_FIXED) for(const n of ND_FIXED[k]) m[n.toLowerCase()]={fixed:k};
+  for(const k in ND_MOVE) for(const n of ND_MOVE[k].names) m[n.toLowerCase()]={move:k}; return m;})();
+function nameDayFor(c){ // returns {fixed:"MM-DD"} | {move:key} | null
+  if(c.nameDay==="none") return null;
+  if(c.nameDay && /^\d{2}-\d{2}$/.test(c.nameDay)) return {fixed:c.nameDay};
+  const fn=String(c.firstName||"").trim().split(/\s+/)[0].toLowerCase(); return ND_INDEX[fn]||null;
+}
+function nameDayLabel(nd){ if(!nd) return ""; if(nd.move) return ND_MOVE[nd.move].label+" (подвижен)"; const [m,d]=nd.fixed.split("-"); return `${+d} ${MONTHS_FULL[+m-1]}`; }
+
+/* ---------- Templates ---------- */
+const DEFAULT_TPL={
+ sig:"Веско, Имоти Премиер",
+ birthday:"Честит рожден ден, {име}! Пожелавам Ви здраве, много радост и успехи през новата година. Бъдете {здрав} и щастлив(а)!\n\nСърдечни поздрави,\n{подпис}",
+ nameday:"Честит имен ден, {име}! Бъдете {здрав}, обичан(а) и все така усмихнат(а). Нека празникът Ви е светъл!\n\nС уважение,\n{подпис}",
+ deal:"Здравейте, {име}! Днес се навършват {години} от покупката на Вашия имот {имот}. Радвам се, че бяхме заедно в тази важна стъпка, и Ви желая още много щастливи години в новия дом!\n\nС уважение,\n{подпис}",
+ custom:"Здравейте, {име}! Поздравявам Ви сърдечно по повод {повод}. Пожелавам Ви здраве, обич и много щастливи мигове със семейството!\n\nС уважение,\n{подпис}"
+};
+let TPL={...DEFAULT_TPL};
+function fill(type,c,ev){
+  let t=TPL[type]||""; const g=c.gender==="f"?"f":(c.gender==="m"?"m":null);
+  const name=c.greeting||c.firstName||"";
+  t=t.replaceAll("{име}",name).replaceAll("{години}",ev.years!=null?yearsWord(ev.years):"")
+     .replaceAll("{имот}",c.property||"").replaceAll("{повод}",ev.label||"").replaceAll("{подпис}",TPL.sig||"")
+     .replaceAll("{здрав}",g==="f"?"здрава":g==="m"?"здрав":"здрав(а)");
+  if(g){ t=t.replace(/(\S+)\(а\)/g,(m0,w)=>g==="f"?w+"а":w); }
+  return t.replace(/ +([,.!])/g,"$1").replace(/имот +([.!,])/g,"имот$1");
+}
+const SUBJ={birthday:"Честит рожден ден!",nameday:"Честит имен ден!",deal:"Честита годишнина на новия дом!",custom:"Честит празник!"};
+
+/* ---------- Events ---------- */
+function nextOccur(mm,dd,from){ let y=from.getFullYear();
+  const mk=yy=>{ let d=dd; if(mm===2&&dd===29&&!((yy%4===0&&yy%100!==0)||yy%400===0)) d=28; return new Date(yy,mm-1,d); };
+  let d=mk(y); if(d<from) d=mk(y+1); return d; }
+function eventsFor(c,from,to){
+  const out=[];
+  const push=(type,date,extra)=>{ if(date>=from&&date<=to) out.push({type,date,c,...extra}); };
+  const bd=c.birthDate || (egnInfo(c.egn)||{}).birth;
+  const pb=parseDate(bd);
+  if(pb){ const d=nextOccur(pb.m,pb.d,from); push("birthday",d,{label:"Рожден ден",years:d.getFullYear()-pb.y}); }
+  const nd=nameDayFor(c);
+  if(nd){ if(nd.fixed){ const [m,d]=nd.fixed.split("-").map(Number); push("nameday",nextOccur(m,d,from),{label:"Имен ден"}); }
+    else { for(const y of [from.getFullYear(),from.getFullYear()+1]){ const e=orthodoxEaster(y); e.setDate(e.getDate()+ND_MOVE[nd.move].off); push("nameday",e,{label:"Имен ден · "+ND_MOVE[nd.move].label}); } } }
+  const pd=parseDate(c.dealDate);
+  if(pd){ const d=nextOccur(pd.m,pd.d,from); const yrs=d.getFullYear()-pd.y; if(yrs>0) push("deal",d,{label:"Годишнина от покупката",years:yrs}); }
+  (c.events||[]).forEach((e,i)=>{ const p=parseDate(e.date); if(!p||!e.label) return; const d=nextOccur(p.m,p.d,from);
+    push("custom",d,{label:e.label,idx:i,years:d.getFullYear()-p.y}); });
+  return out;
+}
+const evKey=ev=>`${ev.date.getFullYear()}-${ev.type}${ev.idx!=null?"-"+ev.idx:""}`;
+
+/* ---------- State ---------- */
+let contacts=[]; let ready=false; let range=30, tab="up";
+let editing=null;
+
+/* ---------- Render: upcoming ---------- */
+function renderUp(){
+  const el=$("#upList");
+  if(!ready){ el.innerHTML=`<div class="card empty">Зареждане…</div>`; return; }
+  const from=today(), to=new Date(from); to.setDate(to.getDate()+range);
+  const evs=contacts.flatMap(c=>eventsFor(c,from,to)).sort((a,b)=>a.date-b.date||a.c.firstName.localeCompare(b.c.firstName));
+  if(!contacts.length){ el.innerHTML=emptyState(); bindEmpty(); return; }
+  if(!evs.length){ el.innerHTML=`<div class="card empty"><h3>Няма поводи в този период</h3>Разшири периода или добави дати към клиентите.</div>`; return; }
+  el.innerHTML=evs.map((ev,i)=>{
+    const c=ev.c, days=Math.round((ev.date-from)/864e5), sent=!!(c.sent&&c.sent[evKey(ev)]);
+    const whenTxt=days===0?"днес":days===1?"утре":`след ${days} дни`;
+    let sub=ev.type==="deal"? `${yearsWord(ev.years)} · ${esc(c.property||"имот")}` : ev.type==="birthday"&&ev.years>0&&ev.years<120? `навършва ${ev.years}` : ev.type==="custom"&&ev.years>0? `${yearsWord(ev.years)}`:"";
+    const chip=ev.type==="birthday"?"Рожден ден":ev.type==="nameday"?ev.label:ev.type==="deal"?"Годишнина от покупката":esc(ev.label);
+    return `<article class="card ev ${days===0?"is-today":""} ${sent?"sent":""}">
+      <div class="when"><b>${ev.date.getDate()}</b><span>${MONTHS[ev.date.getMonth()]}</span></div>
+      <div style="min-width:0">
+        <div class="ev-title">${esc(c.firstName)} ${esc(c.lastName||"")}</div>
+        <div class="ev-sub"><span class="chip ${days===0?"gold":""}">${chip}</span>${whenTxt}, ${DOW[ev.date.getDay()]}${sub?" · "+sub:""}${sent?' <span class="chip done">изпратено</span>':""}</div>
+        <div class="row">
+          ${c.phone?`<button class="btn small viber" data-act="viber" data-i="${i}">Viber</button>`:""}
+          ${c.email?`<button class="btn small" data-act="mail" data-i="${i}">Имейл</button>`:""}
+          ${c.phone?`<button class="btn small" data-act="sms" data-i="${i}">SMS</button>`:""}
+          <button class="btn small" data-act="share" data-i="${i}">Друго…</button>
+          <button class="btn small" data-act="sent" data-i="${i}">${sent?"Отмаркирай":"✓ Изпратено"}</button>
+        </div>
+      </div></article>`;}).join("");
+  el.onclick=async e=>{
+    const b=e.target.closest("[data-act]"); if(!b) return; const ev=evs[+b.dataset.i]; const c=ev.c; const txt=fill(ev.type,c,ev);
+    const act=b.dataset.act;
+    if(act==="viber"){ if(A) A.openViber(normPhone(c.phone),txt); else await copy(txt,"Текстът е копиран."); }
+    if(act==="mail"){ if(A) A.email(c.email,SUBJ[ev.type],txt); else location.href=`mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(SUBJ[ev.type])}&body=${encodeURIComponent(txt)}`; }
+    if(act==="sms"){ if(A) A.sms(normPhone(c.phone),txt); else location.href=`sms:${normPhone(c.phone)}?&body=${encodeURIComponent(txt)}`; }
+    if(act==="share"){ if(A) A.share(txt); else await copy(txt,"Текстът е копиран."); }
+    if(act==="sent"){ const k=evKey(ev); const sentMap={...(c.sent||{})}; if(sentMap[k]) delete sentMap[k]; else sentMap[k]=new Date().toISOString();
+      await save(c.id,{...stripId(c),sent:sentMap}); }
+  };
+}
+async function copy(txt,msg){ if(A){ A.copy(txt); toast(msg); return; } try{ await navigator.clipboard.writeText(txt); toast(msg);}catch(_){ showText(txt); } }
+function showText(txt){ openSheet(`<h3>Текст за поздрав</h3><p class="hint">Копирането не беше разрешено. Маркирай и копирай ръчно.</p><textarea id="manualTxt" style="min-height:200px">${esc(txt)}</textarea><div class="actions"><span></span><button class="btn primary" data-close>Готово</button></div>`);
+  const t=$("#manualTxt"); t.focus(); t.select(); }
+
+function emptyState(){ return `<div class="card empty"><h3>Все още няма клиенти</h3>Добави първия клиент или внеси списък от CSV. Тук ще виждаш кой има рожден ден, имен ден или годишнина от покупката, с готов текст за Viber, имейл или SMS.
+  <div class="row" style="justify-content:center;margin-top:14px"><button class="btn primary" data-go="add">+ Нов клиент</button><button class="btn" data-go="import">Импорт CSV</button></div>
+  <div class="card demo"><div class="demo-tag">Пример как изглежда</div>
+   <div class="ev"><div class="when"><b>6</b><span>ное</span></div><div><div class="ev-title">Мария Петрова</div>
+   <div class="ev-sub"><span class="chip">Годишнина от покупката</span>след 8 дни · 2 години · двустаен, Чаталджа</div>
+   <div class="row"><span class="btn small viber">Viber</span><span class="btn small">Имейл</span><span class="btn small">SMS</span></div></div></div></div></div>`; }
+function bindEmpty(){ document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ if(b.dataset.go==="add") openForm(null); else $("#csvFile").click(); }); }
+
+/* ---------- Render: contacts ---------- */
+function renderContacts(){
+  const q=$("#q").value.trim().toLowerCase(); const el=$("#cList");
+  $("#cCount").textContent=`Клиенти (${contacts.length})`;
+  if(!ready){ el.innerHTML=`<div class="card empty">Зареждане…</div>`; return; }
+  const list=contacts.filter(c=>!q||[c.firstName,c.lastName,c.phone,c.email,c.property,c.notes].join(" ").toLowerCase().includes(q))
+    .sort((a,b)=>(a.firstName+a.lastName).localeCompare(b.firstName+b.lastName,"bg"));
+  if(!contacts.length){ el.innerHTML=emptyState(); bindEmpty(); return; }
+  if(!list.length){ el.innerHTML=`<div class="card empty">Няма съвпадения за „${esc(q)}“.</div>`; return; }
+  el.innerHTML=list.map(c=>{ const bd=c.birthDate||(egnInfo(c.egn)||{}).birth; const nd=nameDayFor(c);
+    const bits=[c.phone, bd?"🎂 "+fmtDate(bd):"", nd?"имен ден: "+nameDayLabel(nd):"", c.dealDate?"сделка: "+fmtDate(c.dealDate):""].filter(Boolean);
+    return `<div class="card contact" data-id="${esc(c.id)}" tabindex="0" role="button"><div class="meta"><div class="nm">${esc(c.firstName)} ${esc(c.lastName||"")}</div>
+      <div class="dt mono">${bits.map(esc).join(" · ")}</div>${c.property?`<div class="dt">${esc(c.property)}</div>`:""}</div><span class="btn small">Отвори</span></div>`; }).join("");
+  el.onclick=e=>{ const r=e.target.closest(".contact"); if(r) openForm(contacts.find(c=>c.id===r.dataset.id)); };
+  el.onkeydown=e=>{ if(e.key==="Enter"){ const r=e.target.closest(".contact"); if(r) openForm(contacts.find(c=>c.id===r.dataset.id)); } };
+}
+
+/* ---------- Form ---------- */
+function openSheet(html){ const o=$("#overlay"); o.innerHTML=`<div class="sheet" role="dialog" aria-modal="true">${html}</div>`; o.hidden=false;
+  o.onclick=e=>{ if(e.target===o||e.target.closest("[data-close]")) closeSheet(); }; }
+function closeSheet(){ $("#overlay").hidden=true; $("#overlay").innerHTML=""; editing=null; }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!$("#overlay").hidden) closeSheet(); });
+
+function openForm(c){
+  editing=c? {...c, events:[...(c.events||[])]} : {firstName:"",lastName:"",events:[]};
+  const v=k=>esc(editing[k]||"");
+  openSheet(`<h3>${c?"Клиент":"Нов клиент"}</h3>
+  <form id="cForm" autocomplete="off">
+   <div id="confirmBox"></div>
+   <fieldset><legend>Лице</legend>
+    <div class="grid2"><label for="f_first">Име *<input id="f_first" name="firstName" required value="${v("firstName")}"></label>
+    <label for="f_last">Фамилия<input id="f_last" name="lastName" value="${v("lastName")}"></label></div>
+    <div class="grid2"><label for="f_greet">Обръщение в поздрава<input id="f_greet" name="greeting" placeholder="напр. г-жо Петрова" value="${v("greeting")}"></label>
+    <label for="f_gender">Пол<select id="f_gender" name="gender"><option value="">—</option><option value="m"${editing.gender==="m"?" selected":""}>Мъж</option><option value="f"${editing.gender==="f"?" selected":""}>Жена</option></select></label></div>
+   </fieldset>
+   <fieldset><legend>Контакт</legend>
+    <div class="grid2"><label for="f_phone">Телефон (и Viber)<input id="f_phone" name="phone" type="tel" inputmode="tel" placeholder="0888 123 456" value="${v("phone")}"></label>
+    <label for="f_email">Имейл<input id="f_email" name="email" type="email" value="${v("email")}"></label></div>
+   </fieldset>
+   <fieldset><legend>Дати</legend>
+    <div class="grid2"><label for="f_egn">ЕГН<input id="f_egn" name="egn" inputmode="numeric" maxlength="10" class="mono" value="${v("egn")}"><span class="hint" id="egnHint">Попълва рождената дата и пола автоматично.</span></label>
+    <label for="f_bd">Рождена дата<input id="f_bd" name="birthDate" type="date" value="${v("birthDate")}"></label></div>
+    <div class="grid2"><label for="f_nd">Имен ден<select id="f_nd" name="nameDay"></select><span class="hint" id="ndHint"></span></label>
+    <label for="f_ndd" id="ndCustomWrap" hidden>Дата на имения ден<input id="f_ndd" type="date"></label></div>
+   </fieldset>
+   <fieldset><legend>Сделка</legend>
+    <div class="grid2"><label for="f_deal">Дата на сделката<input id="f_deal" name="dealDate" type="date" value="${v("dealDate")}"></label>
+    <label for="f_prop">Имот<input id="f_prop" name="property" placeholder="напр. тристаен в Чаталджа" value="${v("property")}"></label></div>
+   </fieldset>
+   <fieldset><legend>Семейни празници</legend>
+    <div id="evRows" style="display:grid;gap:8px"></div>
+    <div><button type="button" class="btn small" id="addEv">+ Добави празник</button> <span class="hint">напр. годишнина от сватбата, рожден ден на детето</span></div>
+   </fieldset>
+   <fieldset><legend>Бележки</legend><label for="f_notes" style="display:none">Бележки</label><textarea id="f_notes" name="notes" placeholder="Деца, интереси, предпочитан канал за връзка…">${v("notes")}</textarea></fieldset>
+   <div class="actions">${c?`<button type="button" class="btn danger" id="delBtn">Изтрий</button>`:"<span></span>"}
+    <div class="row"><button type="button" class="btn" data-close>Отказ</button><button type="submit" class="btn primary">Запази</button></div></div>
+  </form>`);
+  const f=$("#cForm");
+  const ndSel=$("#f_nd");
+  function refreshND(){ const auto=ND_INDEX[($("#f_first").value.trim().split(/\s+/)[0]||"").toLowerCase()];
+    const cur=editing.nameDay||"";
+    ndSel.innerHTML=`<option value="">${auto?"Автоматично — "+nameDayLabel(auto):"Автоматично — няма намерен"}</option><option value="custom">Друга дата…</option><option value="none">Не празнува</option>`;
+    if(/^\d{2}-\d{2}$/.test(cur)){ ndSel.value="custom"; $("#ndCustomWrap").hidden=false; $("#f_ndd").value="2000-"+cur; }
+    else { ndSel.value=cur==="none"?"none":""; $("#ndCustomWrap").hidden=true; }
+    $("#ndHint").textContent=auto?"":"Името не е в календара — избери дата ръчно, ако празнува."; }
+  refreshND();
+  $("#f_first").addEventListener("change",()=>{ if(!/^\d{2}-\d{2}$/.test(editing.nameDay||"")) refreshND(); });
+  ndSel.onchange=()=>{ $("#ndCustomWrap").hidden=ndSel.value!=="custom"; if(ndSel.value!=="custom") editing.nameDay=ndSel.value; };
+  const egnI=$("#f_egn");
+  function checkEgn(){ const info=egnInfo(egnI.value); const h=$("#egnHint");
+    if(!egnI.value){ h.className="hint"; h.textContent="Попълва рождената дата и пола автоматично."; return; }
+    if(!info){ h.className="hint bad"; h.textContent="ЕГН трябва да е 10 цифри."; return; }
+    if(!info.valid){ h.className="hint bad"; h.textContent="Контролната цифра не съвпада — провери ЕГН."; return; }
+    h.className="hint ok"; h.textContent="Валидно · роден(а) "+fmtDate(info.birth);
+    if(!$("#f_bd").value) $("#f_bd").value=info.birth; if(!$("#f_gender").value) $("#f_gender").value=info.gender; }
+  egnI.oninput=checkEgn; checkEgn();
+  function renderEvRows(){ $("#evRows").innerHTML=editing.events.map((e,i)=>`<div class="custom-ev">
+      <label for="ev_l${i}">Повод<input id="ev_l${i}" data-k="label" data-i="${i}" value="${esc(e.label)}" placeholder="Годишнина от сватбата"></label>
+      <label for="ev_d${i}">Дата<input id="ev_d${i}" type="date" data-k="date" data-i="${i}" value="${esc(e.date)}"></label>
+      <button type="button" class="x" data-rm="${i}" aria-label="Премахни">✕</button></div>`).join("");
+    $("#evRows").oninput=e=>{ const t=e.target; if(t.dataset.k) editing.events[+t.dataset.i][t.dataset.k]=t.value; };
+    $("#evRows").onclick=e=>{ const b=e.target.closest("[data-rm]"); if(b){ editing.events.splice(+b.dataset.rm,1); renderEvRows(); } }; }
+  renderEvRows();
+  $("#addEv").onclick=()=>{ editing.events.push({label:"",date:""}); renderEvRows(); $("#ev_l"+(editing.events.length-1)).focus(); };
+  if(c) $("#delBtn").onclick=()=>{ $("#confirmBox").innerHTML=`<div class="confirm">Изтриване на <b>${esc(c.firstName)} ${esc(c.lastName||"")}</b> завинаги?<div class="row" style="margin-top:8px"><button type="button" class="btn danger small" id="delYes">Да, изтрий</button><button type="button" class="btn small" id="delNo">Не</button></div></div>`;
+    $("#confirmBox").scrollIntoView({block:"nearest"});
+    $("#delNo").onclick=()=>$("#confirmBox").innerHTML="";
+    $("#delYes").onclick=async()=>{ if(await remove(c.id)){ toast("Клиентът е изтрит."); closeSheet(); } else toast("Не успях да изтрия. Опитай пак."); }; };
+  f.onsubmit=async e=>{ e.preventDefault(); const fd=new FormData(f);
+    const rec={...stripId(editing)}; ["firstName","lastName","greeting","gender","phone","email","egn","birthDate","dealDate","property","notes"].forEach(k=>rec[k]=String(fd.get(k)||"").trim());
+    if(ndSel.value==="custom"){ const d=$("#f_ndd").value; rec.nameDay=d?d.slice(5):""; } else rec.nameDay=ndSel.value;
+    rec.events=editing.events.filter(x=>x.label&&x.date);
+    if(rec.egn){ const info=egnInfo(rec.egn); if(info&&info.valid){ if(!rec.birthDate) rec.birthDate=info.birth; if(!rec.gender) rec.gender=info.gender; } }
+    rec.updatedAt=new Date().toISOString(); if(!c) rec.createdAt=rec.updatedAt;
+    const ok=await save(c?c.id:null,rec); if(ok){ toast(c?"Промените са запазени.":"Клиентът е добавен."); closeSheet(); } };
+  if(!c) setTimeout(()=>$("#f_first").focus(),50);
+}
+const stripId=c=>{ const o={...c}; delete o.id; return o; };
+/* ---------- Storage (on the phone) ---------- */
+const A=window.Android||null;
+let STATE={contacts:[],tpl:null,settings:{h:9,m:0,before:true}};
+function loadState(){ try{ const s=A?A.load():localStorage.getItem("pozdravi"); if(s){ const o=JSON.parse(s); STATE={...STATE,...o,settings:{...STATE.settings,...(o.settings||{})}}; } }catch(_){} }
+function persist(){ const s=JSON.stringify(STATE); let ok=true;
+  try{ if(A) ok=A.save(s); else localStorage.setItem("pozdravi",s); }catch(_){ ok=false; }
+  if(!ok) toast("Не успях да запиша. Опитай пак."); contacts=STATE.contacts; pushSchedule(); return ok; }
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+async function save(id,rec){ const list=STATE.contacts.slice();
+  if(id){ const i=list.findIndex(x=>x.id===id); if(i<0) return false; list[i]={...rec,id}; } else list.push({...rec,id:newId()});
+  STATE.contacts=list; const ok=persist(); render(); return ok; }
+async function remove(id){ STATE.contacts=STATE.contacts.filter(x=>x.id!==id); const ok=persist(); render(); return ok; }
+const ICON={birthday:"🎂",nameday:"🌿",deal:"🏠",custom:"🎉"};
+function evTitle(ev){ const n=`${ev.c.firstName} ${ev.c.lastName||""}`.trim();
+  if(ev.type==="birthday") return `${ICON.birthday} Рожден ден: ${n}`+(ev.years>0&&ev.years<120?` (${ev.years} г.)`:"");
+  if(ev.type==="nameday") return `${ICON.nameday} Имен ден: ${n}`;
+  if(ev.type==="deal") return `${ICON.deal} ${yearsWord(ev.years)} от покупката: ${n}`;
+  return `${ICON.custom} ${ev.label}: ${n}`; }
+function pushSchedule(){ if(!A) return; const from=today(), to=new Date(from); to.setDate(to.getDate()+400);
+  const out=[]; for(const c of STATE.contacts) for(const ev of eventsFor(c,from,to)){
+    const body=ev.type==="deal"&&ev.c.property? `Имот: ${ev.c.property}. Отвори, за да изпратиш поздрав.`:"Отвори, за да изпратиш поздрав.";
+    out.push({d:ymd(ev.date),t:evTitle(ev),b:body});
+    if(STATE.settings.before){ const p=new Date(ev.date); p.setDate(p.getDate()-1); if(p>=from) out.push({d:ymd(p),t:"Утре — "+evTitle(ev),b:"Подготви поздрав за утре."}); } }
+  try{ A.setSchedule(JSON.stringify(out)); }catch(_){} }
+
+/* ---------- CSV ---------- */
+const CSV_COLS=[["firstName","Име"],["lastName","Фамилия"],["greeting","Обръщение"],["gender","Пол"],["phone","Телефон"],["email","Имейл"],["egn","ЕГН"],["birthDate","Рождена дата"],["nameDay","Имен ден"],["dealDate","Дата на сделка"],["property","Имот"],["notes","Бележки"]];
+function parseCSV(text){ const rows=[]; let row=[],f="",q=false; const sep=(text.split("\n")[0].match(/;/g)||[]).length>(text.split("\n")[0].match(/,/g)||[]).length?";":",";
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=ch; }
+    else if(ch==='"') q=true; else if(ch===sep){row.push(f);f="";} else if(ch==="\n"){row.push(f);rows.push(row);row=[];f="";} else if(ch!=="\r") f+=ch; }
+  if(f||row.length){row.push(f);rows.push(row);} return rows.filter(r=>r.some(x=>x.trim())); }
+function normDateIn(s){ s=String(s||"").trim(); let m;
+  if((m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s))) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+  if((m=/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/.exec(s))) return `${m[3]}-${pad(m[2])}-${pad(m[1])}`; return ""; }
+$("#csvFile").onchange=async e=>{ const file=e.target.files[0]; e.target.value=""; if(!file) return;
+  const rows=parseCSV(await file.text()); if(rows.length<2){ toast("Файлът няма редове с данни."); return; }
+  const head=rows[0].map(h=>h.trim().toLowerCase());
+  const idx={}; CSV_COLS.forEach(([k,l])=>{ const j=head.findIndex(h=>h===l.toLowerCase()||h===k.toLowerCase()); if(j>=0) idx[k]=j; });
+  if(idx.firstName==null){ toast("Липсва колона „Име“ в първия ред."); return; }
+  let n=0; const added=[]; for(const r of rows.slice(1)){ const rec={events:[]}; for(const k in idx) rec[k]=String(r[idx[k]]||"").trim();
+    if(!rec.firstName) continue; rec.birthDate=normDateIn(rec.birthDate); rec.dealDate=normDateIn(rec.dealDate);
+    rec.gender=/^(ж|f)/i.test(rec.gender||"")?"f":/^(м|m)/i.test(rec.gender||"")?"m":"";
+    const info=egnInfo(rec.egn); if(info&&info.valid){ if(!rec.birthDate) rec.birthDate=info.birth; if(!rec.gender) rec.gender=info.gender; }
+    rec.createdAt=rec.updatedAt=new Date().toISOString();
+    rec.id=newId()+n; added.push(rec); n++; }
+  STATE.contacts=STATE.contacts.concat(added); persist(); render(); toast(`Внесени ${n} клиента.`); };
+$("#btnImport").onclick=()=>$("#csvFile").click();
+$("#btnExport").onclick=async()=>{ if(!contacts.length){ toast("Няма клиенти за експорт."); return; }
+  const q=s=>`"${String(s??"").replace(/"/g,'""')}"`;
+  const csv="﻿"+[CSV_COLS.map(c=>q(c[1])).join(";"),...contacts.map(c=>CSV_COLS.map(([k])=>q(k==="gender"?(c.gender==="f"?"Ж":c.gender==="m"?"М":""):c[k])).join(";"))].join("\r\n");
+  const name=`klienti-${ymd(new Date())}.csv`;
+  if(A){ toast(A.saveDownload(name,csv)); return; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download=name; a.click(); };
+$("#btnAdd").onclick=()=>openForm(null);
+$("#q").oninput=renderContacts;
+
+/* ---------- Templates UI ---------- */
+function fillTplForm(){ for(const k in DEFAULT_TPL) $("#t_"+k).value=TPL[k]; }
+$("#tplForm").onsubmit=async e=>{ e.preventDefault(); const n={}; for(const k in DEFAULT_TPL) n[k]=$("#t_"+k).value;
+  TPL=n; STATE.tpl=n; if(persist()) toast("Текстовете са запазени."); };
+function fillSettings(){ const st=STATE.settings; $("#s_time").value=pad(st.h)+":"+pad(st.m); $("#s_before").checked=!!st.before; }
+$("#saveRem").onclick=()=>{ const [h,m]=($("#s_time").value||"09:00").split(":").map(Number);
+  STATE.settings={...STATE.settings,h,m,before:$("#s_before").checked}; if(A) A.setReminderTime(h,m);
+  if(persist()) toast(`Ще получаваш известия в ${pad(h)}:${pad(m)}.`); };
+$("#testNotif").onclick=()=>{ if(!A){ toast("Работи само в приложението."); return; }
+  A.setSchedule(JSON.stringify([{d:ymd(new Date()),t:"🎂 Пробно известие",b:"Така ще изглежда напомнянето за празник."}]));
+  A.testNotify(); setTimeout(pushSchedule,1500); };
+$("#tplReset").onclick=()=>{ TPL={...DEFAULT_TPL}; fillTplForm(); toast("Върнати стандартните — натисни „Запази“."); };
+
+/* ---------- Tabs & range ---------- */
+function setTab(t){ tab=t; document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t)); ["up","c","t"].forEach(x=>$("#view-"+x).hidden=x!==t);
+  try{ localStorage.setItem("tab",t);}catch(_){} render(); }
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$("#range").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; range=+b.dataset.d; document.querySelectorAll("#range button").forEach(x=>x.setAttribute("aria-pressed",x===b)); renderUp(); };
+function render(){ if(tab==="up") renderUp(); else if(tab==="c") renderContacts(); else { fillTplForm(); fillSettings(); } }
+window.onAndroidBack=()=>{ if(!$("#overlay").hidden){ closeSheet(); return true; } if(tab!=="up"){ setTab("up"); return true; } return false; };
+
+/* ---------- Boot ---------- */
+const t0=today(); $("#todayLbl").textContent=`${DOW[t0.getDay()]}, ${t0.getDate()} ${MONTHS_FULL[t0.getMonth()]}`;
+try{ const s=localStorage.getItem("tab"); if(s&&["up","c","t"].includes(s)) tab=s; }catch(_){}
+loadState(); contacts=STATE.contacts; if(STATE.tpl) TPL={...DEFAULT_TPL,...STATE.tpl}; ready=true;
+if(A){ A.setReminderTime(STATE.settings.h,STATE.settings.m); pushSchedule(); }
+setTab(tab);
+})();
+</script>
+</body></html>
