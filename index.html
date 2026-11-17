@@ -174,7 +174,7 @@ video.ph{display:block;width:100%;max-width:100%;object-fit:cover;padding:0;back
 html,body{overscroll-behavior-x:none}
 .mag img{-webkit-user-drag:none}
 
-</style>
+.pnav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}.pnav a{flex:1 1 0;min-width:130px;text-align:center;text-decoration:none;font-weight:600;font-size:14px;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:10px 12px;white-space:nowrap}.pnav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}</style>
 </head>
 <body>
 <main class="mag" id="mag">
@@ -194,7 +194,7 @@ html,body{overscroll-behavior-x:none}
 <p class="hint">Плъзнете наляво, за да разгледате →</p>
 </div></section>
 
-<section class="page"><div class="in"><h2>Съдържание</h2><p class="sub">Докоснете имот, за да отидете на него.</p><ul id="tocl" style="list-style:none;padding:0"></ul></div></section>
+<section class="page" id="spisak"><div class="in"><h2>Съдържание</h2><p class="sub">Докоснете имот, за да отидете на него.</p><ul id="tocl" style="list-style:none;padding:0"></ul></div></section>
 
 <section class="page proj"><div class="in">
 <img class="ph" src="img/377772.jpg" alt="Визуализация на комплекс Виница Форест" loading="lazy">
@@ -933,6 +933,7 @@ html,body{overscroll-behavior-x:none}
 
 </main>
 <div class="dots" id="dots"></div>
+<script>(function(){[].forEach.call(document.querySelectorAll("#mag>section"),function(p){if(!p.querySelector(".price"))return;var w=p.querySelector(".in")||p,d=document.createElement("div");d.className="pnav";d.innerHTML='<a href="#spisak" data-go="spisak">☰ Всички имоти</a><a href="#otzivi" data-go="otzivi">★ Отзиви за мен</a>';w.appendChild(d)})})();</script>
 <script>
 var m=document.getElementById('mag'),d=document.getElementById('dots'),n=m.children.length,P=[].slice.call(m.children),T=document.getElementById('tocl');
 var c=document.createElement('span');d.appendChild(c);
