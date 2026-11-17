@@ -962,7 +962,8 @@ function eout(t){return 1-Math.pow(1-t,3)}
 function W(){return m.clientWidth||1}
 function reset(el){el.style.transform='';el.style.transformOrigin='';el.style.backfaceVisibility=''}
 function apply(){raf=0;var w=W(),s=m.scrollLeft/w,lo=Math.floor(s),t=s-lo,now=[],shade='none';
- if(!rm&&t>0.0005&&t<0.9995){
+ var atEnd=m.scrollLeft>=m.scrollWidth-m.clientWidth-2,atStart=m.scrollLeft<=1;
+ if(!rm&&!atEnd&&!atStart&&t>0.004&&t<0.996){
   var out=P[lo],inn=P[lo+1],a=90*t,r=a*Math.PI/180;
   if(out){out.style.transformOrigin='left center';out.style.backfaceVisibility='hidden';
    out.style.transform='translate3d('+(t*w)+'px,0,0) perspective('+D+'px) rotateY('+(-a)+'deg)';now.push(out)}
